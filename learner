@@ -1,0 +1,56 @@
+#!/usr/bin/env perl
+
+use strict;
+use warnings;
+use Getopt::Long;
+
+sub print_help {
+  print STDERR "usage:\n";
+  print STDERR "./learner -t <TAGGED_DIR> -u <UNTAGGED_DIR> -o <OUTPUT_DIR> ";
+  print STDERR "[-q <NUMBER_OF_QUERIES>] [-f <FILTER_TAGGED_CORPUS>] [-g <FILTER_UNTAGGED_CORPUS>] [--passive]\n";
+  print STDERR "\tTAGGED_DIR\t\tDirectory with the annotated files in conll format\n";
+  print STDERR "\tUNTAGGED_DIR\t\tDirectory with the unannotated files in conll format\n";
+  print STDERR "\tOUTPUT_DIR\t\tDirectory where results are written\n";
+  print STDERR "\tNUMBER_OF_QUERIES\tAmount of queries in each step of the Active Learning algorithm (defaults to 5)\n";
+  print STDERR "\tFILTER_TAGGED_CORPUS\tFilter of features for annotated corpus (default to 0)\n";
+  print STDERR "\tFILTER_UNTAGGED_CORPUS\tFilter of features for unannotated corpus (default to 10)\n";
+  print STDERR "\tpassive\t\t\tIf flagged, the sampling of the unannotated corpus is random (doesn't use active learning approach)\n";
+}
+
+my $tagdir = undef;
+my $untagdir = undef;
+my $outputdir = undef;
+my $query_instances = 5;
+my $tagfilter = 0;
+my $untagfilter = 10;
+my $passive = '';
+
+GetOptions("t=s" => \$tagdir,
+           "u=s" => \$untagdir,
+           "o=s" => \$outputdir,
+           "q=i" => \$query_instances,
+           "f=i" => \$tagfilter,
+           "uf=i" => \$untagfilter,
+           "passive" => \$passive);
+
+if(!defined $tagdir or !defined $untagdir or !defined $outputdir) {
+  print_help;
+  die "Error in parsing the arguments.";
+} 
+
+mkdir "$outputdir/initial_iteration";
+mkdir "$outputdir/initial_iteration/data";
+mkdir "$outputdir/initial_iteration/data/binary";
+mkdir "$outputdir/initial_iteration/models";
+mkdir "$outputdir/initial_iteration/results";
+
+my $rc = system "perl ./utils/annotated/generateannotatedfile.pl $tagdir $outputdir/initial_iteration $tagfilter";
+die if ($rc >> 8) != 0;
+
+# Annotated corpus initial training
+
+my $java = "java -Xmx2048m -cp bin/nll2rdf.jar nll2rdf.classifiers.AnnotatedClassifier";
+my $args = "-a $outputdir/initial_iteration/data/binary -o $outputdir/initial_iteration/";
+
+$rc = system $java . " " . $args;
+die "Error in the training of the initial model: $!" if ($rc >> 8) != 0;
