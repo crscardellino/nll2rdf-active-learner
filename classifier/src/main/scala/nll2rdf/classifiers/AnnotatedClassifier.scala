@@ -45,7 +45,7 @@ object AnnotatedClassifier {
       )
 
       results.write(s"Model:\n${learner.toString}\n")
-      results.write(s"Results summary:${eval.toSummaryString}\n")
+      results.write(s"Results summary:\n${eval.toSummaryString}\n")
       results.write(s"Detailed results:\n ${eval.toClassDetailsString}\n")
       results.write(s"Confussion matrix:\n${eval.toMatrixString}")
 
@@ -55,15 +55,28 @@ object AnnotatedClassifier {
         new File(s"${config.outputdir.getCanonicalPath}/results/data.$classname.txt")
       )
 
-      dataresults.write(f"${eval.numInstances}%.0f ${eval.correct}%.0f ${eval.pctCorrect}%.2f " +
-        f"${eval.precision(1)}%.2f ${eval.recall(1)}%.2f ${eval.fMeasure(1)}%.2f\n")
+      dataresults.write(f"${eval.kappa}%.2f ${eval.precision(1)}%.2f " +
+        f"${eval.recall(1)}%.2f ${eval.fMeasure(1)}%.2f\n")
 
       dataresults.close()
+
+      Console.err.println("Saving model files")
 
       weka.core.SerializationHelper.write(
         s"${config.outputdir.getCanonicalPath}/models/$classname.model",
         learner
       )
+
+      /* We search for every selected attribute */
+
+      val attrdata: PrintWriter = new PrintWriter(
+        new File(s"${config.outputdir.getCanonicalPath}/models/features.$classname.txt")
+      )
+
+      for(attr <- learner.getUsedAttributes(1)) attrdata.write(s"${datafile.attribute(attr).name}\n")
+
+
+      attrdata.close()
 
       Console.err.println()
    }
