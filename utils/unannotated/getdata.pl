@@ -5,7 +5,7 @@ use warnings;
 use POSIX;
 
 my $dir = shift @ARGV;
-my $features = shift @ARGV;
+my $featuresdir = shift @ARGV;
 my $instances = shift @ARGV;
 
 opendir(my $dh, $dir) or die "Couldn't open the directory";
@@ -29,7 +29,7 @@ sub get_progress {
   return "[". $totalbars . $totalempties . "]" . sprintf("%.2f%%", $percentage);
 }
 
-my @features = `cat $features/features.*.txt`;
+my @features = `cat $featuresdir/features.*.txt`;
 chomp @features;
 
 my %relevantfeatures = map { $_ => 1 } @features;
@@ -81,7 +81,15 @@ while(readdir $dh) {
         print ",$filename-$instance_number\n";
         
         open(my $ih, ">", "$instances/$filename-$instance_number.txt") or die "Couldn't open instance file for writing: $!";
-        print $ih join " ", @instance;
+        my $instance = join " ", @instance;
+        $instance =~ s/\s([.:;,])/$1/ge;
+        $instance =~ s/\-lrb\-\s/\(/g;
+        $instance =~ s/\s\-rrb\-/\)/g;
+        $instance =~ s/\`\`\s/\"/g;
+        $instance =~ s/\s\'\'/\"/g;
+        $instance =~ s/([:;])/$1\n/g;
+
+        print $ih $instance . "\n";
         close $ih;
       }
 

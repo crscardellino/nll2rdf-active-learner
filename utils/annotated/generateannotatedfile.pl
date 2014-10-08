@@ -15,7 +15,7 @@ $filter = 0 unless defined $filter;
 
 my $directory = dirname (__FILE__);
 
-print STDERR "Creating arff data file with filter $filter\n";
+print STDERR "Creating arff data file with filter $filter for annotated corpus\n";
 
 my $rc = system "find $tagdir -type f -name \"*.conll\" -print0 | xargs -0 cat | perl $directory/getdata.pl $filter > /tmp/annotated.nll2rdf.data";
 

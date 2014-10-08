@@ -102,7 +102,7 @@ GetOptions("t=s" => \$tagdir,
            "o=s" => \$outputdir,
            "q=i" => \$query_instances,
            "f=i" => \$tagfilter,
-           "uf=i" => \$untagfilter,
+           "g=i" => \$untagfilter,
            "passive" => \$passive);
 
 if(!defined $tagdir or !defined $untagdir or !defined $outputdir) {
@@ -119,7 +119,7 @@ mkdir "$outputdir/iteration0/results";
 my $rc = system "perl ./utils/annotated/generateannotatedfile.pl $tagdir $outputdir/iteration0 $tagfilter";
 die if ($rc >> 8) != 0;
 
-Annotated corpus initial training
+print "Annotated corpus initial training\n";
 
 my $java = "java -Xmx2048m -cp bin/nll2rdf.jar nll2rdf.classifiers.AnnotatedClassifier";
 my $args = "-a $outputdir/iteration0/data/binary/ -o $outputdir/iteration0/";
@@ -134,23 +134,32 @@ print "\n";
 my $iteration = 1;
 
 while(1) {
-  print STDERR "Active learning iteration: $iteration\n";
+  print STDERR "\nActive learning iteration: $iteration\n";
 
-  mkdir "$outputdir/iteration$iteration";
-  mkdir "$outputdir/iteration$iteration/data";
-  mkdir "$outputdir/iteration$iteration/data/binary";
-  mkdir "$outputdir/iteration$iteration/instances";
-  mkdir "$outputdir/iteration$iteration/models";
-  mkdir "$outputdir/iteration$iteration/results";
-
-  my $features = sprintf("$outputdir/iteration%d/models", $iteration - 1);
-  my $oldarff = sprintf("$outputdir/iteration%d/data/annotated.nll2rdf.arff", $iteration - 1);
   my $outdir = "$outputdir/iteration$iteration";
+  mkdir "$outdir";
+  mkdir "$outdir/data";
+  mkdir "$outdir/data/binary";
+  mkdir "$outdir/instances";
+  mkdir "$outdir/models";
+  mkdir "$outdir/results";
 
-  $rc = system "perl ./utils/unannotated/generateunannotatedfile.pl $untagdir $features $oldarff $outdir $untagfilter";
+  my $olddir = sprintf("$outputdir/iteration%d", $iteration - 1);
+  my $modelsdir = "$olddir/models";
+  my $oldarff = "$olddir/data/annotated.nll2rdf.arff";
+
+  $rc = system "perl ./utils/unannotated/generateunannotatedfile.pl $untagdir $modelsdir $oldarff $outdir $untagfilter";
   die if ($rc >> 8) != 0;
 
-  print_results 0, "$outdir/results";
+  my $instance_count = `wc -l $outdir/data/unannotated.nll2rdf.csv | awk '{ print \$1 }'`;
+
+  my $java = "java -Xmx2048m -cp bin/nll2rdf.jar nll2rdf.classifiers.UnannotatedClassifier";
+  my $args = "-c $outdir/data/unannotated.nll2rdf.csv -m $modelsdir/ -o $outdir/ -a $oldarff -q $query_instances -i $instance_count";
+
+  $rc = system $java . " " . $args;
+  die "Error in the querying: $!" if ($rc >> 8) != 0;
+
+  # print_results 0, "$outdir/results";
   <STDIN>;
   $iteration++;
 }
