@@ -2,11 +2,18 @@ Natural Language Licenses to RDF
 --------------------------------
 Text clasification tool for transforming natural language licenses to ODRL RDF data.
 
+NLL2RDF Active Learner Copyright (C) 2014 Cristian A. Cardellino
+This program comes with ABSOLUTELY NO WARRANTY.
+This is free software, and you are welcome to redistribute it under certain conditions.
+See LICENSE for details, or visit <http://www.gnu.org/licenses/gpl.html>.
+
 Requirements:
 ------------
 - Java JRE 1.7
 - Perl 5.16.2 or above
-- Unix OS (Linux or OSX)
+- Unix OS (Linux or OSX): This program uses many scripts with access
+	to many unix programs and functions and is not suitable for a
+	Windows environment.
 
 Usage:
 -----
