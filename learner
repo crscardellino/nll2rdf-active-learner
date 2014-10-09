@@ -1,5 +1,21 @@
 #!/usr/bin/env perl
 
+# NLL2RDF Active Learner
+# Copyright (C) 2014 Cristian A. Cardellino
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 use strict;
 use warnings;
 use File::Spec;
@@ -32,8 +48,13 @@ sub print_results {
   my @recalls = ();
   my @fmeasures = ();
 
+  open(my $fh, ">", "$dir/generalresults.txt") or die "$!";
+
   print STDERR "\nResults for iteration $iteration\n";
+  print $fh "\nResults for iteration $iteration\n";
   print STDERR "KAPPA\tPREC\tRECALL\tF-SCORE\tCLASS\n";
+  print $fh "KAPPA\tPREC\tRECALL\tF-SCORE\tCLASS\n";
+  
 
   foreach my $data(@data) {
     my @coeffs = split /\s/, $data;
@@ -42,7 +63,9 @@ sub print_results {
     my $name = (split /\./, $filename)[1];
 
     print STDERR $coeffs[0] . "\t" . $coeffs[1] . "\t" . $coeffs[2] . "\t" . $coeffs[3] . "\t";
+    print $fh $coeffs[0] . "\t" . $coeffs[1] . "\t" . $coeffs[2] . "\t" . $coeffs[3] . "\t";
     print STDERR uc($name) . "\n";
+    print $fh uc($name) . "\n";
     push @kappas, $coeffs[0];
     push @precisions, $coeffs[1];
     push @recalls, $coeffs[2];
@@ -86,7 +109,30 @@ sub print_results {
   print STDERR sprintf("%.2f\t", $stats[1]->standard_deviation());
   print STDERR sprintf("%.2f\t", $stats[2]->standard_deviation());
   print STDERR sprintf("%.2f\t", $stats[3]->standard_deviation());
-  print STDERR "SDEV\n";  
+  print STDERR "SDEV\n";
+
+  print $fh "\nGeneral Results Stastistics\n";
+  print $fh "KAPPA\tPREC\tRECALL\tF-SCORE\tCLASS\n";
+
+  print $fh sprintf("%.2f\t", $stats[0]->median());
+  print $fh sprintf("%.2f\t", $stats[1]->median());
+  print $fh sprintf("%.2f\t", $stats[2]->median());
+  print $fh sprintf("%.2f\t", $stats[3]->median());
+  print $fh "MEDIAN\n";
+
+  print $fh sprintf("%.2f\t", $stats[0]->mean());
+  print $fh sprintf("%.2f\t", $stats[1]->mean());
+  print $fh sprintf("%.2f\t", $stats[2]->mean());
+  print $fh sprintf("%.2f\t", $stats[3]->mean());
+  print $fh "MEAN\n";
+  
+  print $fh sprintf("%.2f\t", $stats[0]->standard_deviation());
+  print $fh sprintf("%.2f\t", $stats[1]->standard_deviation());
+  print $fh sprintf("%.2f\t", $stats[2]->standard_deviation());
+  print $fh sprintf("%.2f\t", $stats[3]->standard_deviation());
+  print $fh "SDEV\n";
+
+  close $fh;
 }
 
 my $tagdir = undef;
@@ -96,6 +142,11 @@ my $query_instances = 5;
 my $tagfilter = 0;
 my $untagfilter = 10;
 my $passive = '';
+
+print STDERR "NLL2RDF Active Learner Copyright (C) 2014 Cristian A. Cardellino\n";
+print STDERR "This program comes with ABSOLUTELY NO WARRANTY.\n";
+print STDERR "This is free software, and you are welcome to redistribute it\n";
+print STDERR "under certain conditions. See LICENSE for details.\n";
 
 GetOptions("t=s" => \$tagdir,
            "u=s" => \$untagdir,
@@ -133,7 +184,7 @@ print "\n";
 
 my $iteration = 1;
 
-while(1) {
+while(!$passive) {
   print STDERR "\nActive learning iteration: $iteration\n";
 
   my $outdir = "$outputdir/iteration$iteration";
@@ -158,6 +209,8 @@ while(1) {
 
   $rc = system $java . " " . $args;
   die "Error in the querying: $!" if ($rc >> 8) != 0;
+
+  
 
   # print_results 0, "$outdir/results";
   <STDIN>;
