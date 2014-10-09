@@ -128,8 +128,8 @@ while(readdir $dh) {
     push @instance, $word; # Useful for Active Learning with the oracle
 
     $word =~ s/'s/s/g;
-    $word =~ s/''/_/g;
-    $word =~ s/:/-/g;
+    $word =~ s/''//g;
+    $word =~ s/[:;,\.\"]//g;
 
     my $pos = $line[3];
     $pos =~ s/''/_/;

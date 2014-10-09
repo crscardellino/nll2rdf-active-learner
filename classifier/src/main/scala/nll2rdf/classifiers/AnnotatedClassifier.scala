@@ -86,7 +86,7 @@ object AnnotatedClassifier extends Classifier {
       /* We search for every selected attribute */
 
       val attrdata: PrintWriter = new PrintWriter(
-        new File(s"${config.outputdir.getCanonicalPath}/models/features.$classname.txt")
+        new File(s"${config.outputdir.getCanonicalPath}/features/features.$classname.txt")
       )
 
       for(attr <- learner.getUsedAttributes(1)) attrdata.write(s"${datafile.attribute(attr).name}\n")

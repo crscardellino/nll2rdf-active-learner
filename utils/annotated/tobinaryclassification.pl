@@ -31,7 +31,9 @@ chomp @attributes;
 my @classes = split ",", (split /\s+/, pop @attributes)[2];
 
 $classes[0] =~ s/{//;
-$classes[12] =~ s/}//;
+$classes[scalar(@classes)-1] =~ s/}//;
+
+@classes = grep { lc($_) ne "no-class" } @classes;
 
 my @files = ();
 
@@ -55,7 +57,7 @@ foreach my $instance(@instances) {
   foreach my $class(@classes) {
     my $idx = firstidx { $_ eq $class } @classes;
     my $fh = $files[$idx];
-    
+
     print $fh join ",", @values;
     
     if ($class eq $instance_class) {

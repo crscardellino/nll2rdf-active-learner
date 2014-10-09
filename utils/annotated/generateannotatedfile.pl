@@ -29,20 +29,24 @@ $outputdir = "/tmp/" unless defined $outputdir;
 my $filter = shift @ARGV;
 $filter = 0 unless defined $filter;
 
+my $oldfeaturesdir = shift @ARGV;
+
 my $directory = dirname (__FILE__);
 
 print STDERR "Creating arff data file with filter $filter for annotated corpus\n";
 
-my $rc = system "find $tagdir -type f -name \"*.conll\" -print0 | xargs -0 cat | perl $directory/getdata.pl $filter > /tmp/annotated.nll2rdf.data";
-
+my $rc = system "find $tagdir -type f -name \"*.conll\" -print0 | xargs -0 cat | perl $directory/getdata.pl > /tmp/annotated.nll2rdf.data";
 die "Error in processing the corpus: $!" if ($rc >> 8) != 0;
 
-$rc = system "perl $directory/getattributes.pl < /tmp/annotated.nll2rdf.data > /tmp/annotated.nll2rdf.bag";
+if (defined $oldfeaturesdir) {
+  $rc = system "perl $directory/getmanualdata.pl $oldfeaturesdir $outputdir/instances/tagged >> /tmp/annotated.nll2rdf.data";
+  die "Error in processing the manually tagged instances: $!" if ($rc >> 8) != 0;
+}
 
+$rc = system "perl $directory/getattributes.pl < /tmp/annotated.nll2rdf.data > /tmp/annotated.nll2rdf.bag";
 die "Error in processing the features: $!" if ($rc >> 8) != 0;
 
 $rc = system "perl $directory/generatearff.pl /tmp/annotated.nll2rdf.data $filter < /tmp/annotated.nll2rdf.bag > $outputdir/data/annotated.nll2rdf.arff";
-
 die "Error in creating the arff file: $!" if ($rc >> 8) != 0;
 
 $rc = system "perl $directory/tobinaryclassification.pl $outputdir/data/annotated.nll2rdf.arff $outputdir/data/binary";  

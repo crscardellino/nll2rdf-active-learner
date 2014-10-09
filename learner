@@ -50,9 +50,9 @@ sub print_results {
 
   open(my $fh, ">", "$dir/generalresults.txt") or die "$!";
 
-  print STDERR "\nResults for iteration $iteration\n";
+  print "\nResults for iteration $iteration\n";
   print $fh "\nResults for iteration $iteration\n";
-  print STDERR "KAPPA\tPREC\tRECALL\tF-SCORE\tCLASS\n";
+  print "KAPPA\tPREC\tRECALL\tF-SCORE\tCLASS\n";
   print $fh "KAPPA\tPREC\tRECALL\tF-SCORE\tCLASS\n";
   
 
@@ -62,9 +62,9 @@ sub print_results {
     
     my $name = (split /\./, $filename)[1];
 
-    print STDERR $coeffs[0] . "\t" . $coeffs[1] . "\t" . $coeffs[2] . "\t" . $coeffs[3] . "\t";
+    print $coeffs[0] . "\t" . $coeffs[1] . "\t" . $coeffs[2] . "\t" . $coeffs[3] . "\t";
     print $fh $coeffs[0] . "\t" . $coeffs[1] . "\t" . $coeffs[2] . "\t" . $coeffs[3] . "\t";
-    print STDERR uc($name) . "\n";
+    print uc($name) . "\n";
     print $fh uc($name) . "\n";
     push @kappas, $coeffs[0];
     push @precisions, $coeffs[1];
@@ -90,26 +90,26 @@ sub print_results {
   $stat->add_data(@fmeasures);
   push @stats, $stat;
 
-  print STDERR "\nGeneral Results Stastistics\n";
-  print STDERR "KAPPA\tPREC\tRECALL\tF-SCORE\tCLASS\n";
+  print "\nGeneral Results Stastistics\n";
+  print "KAPPA\tPREC\tRECALL\tF-SCORE\tCLASS\n";
 
-  print STDERR sprintf("%.2f\t", $stats[0]->median());
-  print STDERR sprintf("%.2f\t", $stats[1]->median());
-  print STDERR sprintf("%.2f\t", $stats[2]->median());
-  print STDERR sprintf("%.2f\t", $stats[3]->median());
-  print STDERR "MEDIAN\n";
+  print sprintf("%.2f\t", $stats[0]->median());
+  print sprintf("%.2f\t", $stats[1]->median());
+  print sprintf("%.2f\t", $stats[2]->median());
+  print sprintf("%.2f\t", $stats[3]->median());
+  print "MEDIAN\n";
 
-  print STDERR sprintf("%.2f\t", $stats[0]->mean());
-  print STDERR sprintf("%.2f\t", $stats[1]->mean());
-  print STDERR sprintf("%.2f\t", $stats[2]->mean());
-  print STDERR sprintf("%.2f\t", $stats[3]->mean());
-  print STDERR "MEAN\n";
+  print sprintf("%.2f\t", $stats[0]->mean());
+  print sprintf("%.2f\t", $stats[1]->mean());
+  print sprintf("%.2f\t", $stats[2]->mean());
+  print sprintf("%.2f\t", $stats[3]->mean());
+  print "MEAN\n";
   
-  print STDERR sprintf("%.2f\t", $stats[0]->standard_deviation());
-  print STDERR sprintf("%.2f\t", $stats[1]->standard_deviation());
-  print STDERR sprintf("%.2f\t", $stats[2]->standard_deviation());
-  print STDERR sprintf("%.2f\t", $stats[3]->standard_deviation());
-  print STDERR "SDEV\n";
+  print sprintf("%.2f\t", $stats[0]->standard_deviation());
+  print sprintf("%.2f\t", $stats[1]->standard_deviation());
+  print sprintf("%.2f\t", $stats[2]->standard_deviation());
+  print sprintf("%.2f\t", $stats[3]->standard_deviation());
+  print "SDEV\n";
 
   print $fh "\nGeneral Results Stastistics\n";
   print $fh "KAPPA\tPREC\tRECALL\tF-SCORE\tCLASS\n";
@@ -145,8 +145,8 @@ my $passive = '';
 
 print STDERR "NLL2RDF Active Learner Copyright (C) 2014 Cristian A. Cardellino\n";
 print STDERR "This program comes with ABSOLUTELY NO WARRANTY.\n";
-print STDERR "This is free software, and you are welcome to redistribute it\n";
-print STDERR "under certain conditions. See LICENSE for details.\n";
+print STDERR "This is free software, and you are welcome to redistribute it under certain conditions.\n";
+print STDERR "See LICENSE for details, or visit <http://www.gnu.org/licenses/gpl.html>.\n";
 
 GetOptions("t=s" => \$tagdir,
            "u=s" => \$untagdir,
@@ -165,12 +165,13 @@ mkdir "$outputdir/iteration0";
 mkdir "$outputdir/iteration0/data";
 mkdir "$outputdir/iteration0/data/binary";
 mkdir "$outputdir/iteration0/models";
+mkdir "$outputdir/iteration0/features";
 mkdir "$outputdir/iteration0/results";
 
 my $rc = system "perl ./utils/annotated/generateannotatedfile.pl $tagdir $outputdir/iteration0 $tagfilter";
 die if ($rc >> 8) != 0;
 
-print "Annotated corpus initial training\n";
+print STDERR "Annotated corpus initial training\n";
 
 my $java = "java -Xmx2048m -cp bin/nll2rdf.jar nll2rdf.classifiers.AnnotatedClassifier";
 my $args = "-a $outputdir/iteration0/data/binary/ -o $outputdir/iteration0/";
@@ -192,25 +193,32 @@ while(!$passive) {
   mkdir "$outdir/data";
   mkdir "$outdir/data/binary";
   mkdir "$outdir/instances";
+  mkdir "$outdir/instances/tagged";
   mkdir "$outdir/models";
+  mkdir "$outdir/features";
   mkdir "$outdir/results";
 
   my $olddir = sprintf("$outputdir/iteration%d", $iteration - 1);
+  my $featuresdir = "$olddir/features";
   my $modelsdir = "$olddir/models";
   my $oldarff = "$olddir/data/annotated.nll2rdf.arff";
 
-  $rc = system "perl ./utils/unannotated/generateunannotatedfile.pl $untagdir $modelsdir $oldarff $outdir $untagfilter";
+  $rc = system "perl ./utils/unannotated/generateunannotatedfile.pl $untagdir $featuresdir $oldarff $outdir $untagfilter";
   die if ($rc >> 8) != 0;
 
   my $instance_count = `wc -l $outdir/data/unannotated.nll2rdf.csv | awk '{ print \$1 }'`;
+  chomp $instance_count;
 
   my $java = "java -Xmx2048m -cp bin/nll2rdf.jar nll2rdf.classifiers.UnannotatedClassifier";
-  my $args = "-c $outdir/data/unannotated.nll2rdf.csv -m $modelsdir/ -o $outdir/ -a $oldarff -q $query_instances -i $instance_count";
+  my $args = "-c $outdir/data/unannotated.nll2rdf.csv -m $modelsdir/ -o $outdir/ -a $oldarff -i $instance_count -q $query_instances";
 
   $rc = system $java . " " . $args;
   die "Error in the querying: $!" if ($rc >> 8) != 0;
 
-  
+  print STDERR "\nQueries Annotation\n";
+
+  $rc = system "perl ./utils/activelearning/makequeries.pl $outdir/data/queries.txt $outdir/instances";
+  die "Error in query annotation: $!" if ($rc >> 8) != 0;
 
   # print_results 0, "$outdir/results";
   <STDIN>;

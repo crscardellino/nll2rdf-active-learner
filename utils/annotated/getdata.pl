@@ -22,9 +22,6 @@ use File::Basename;
 use lib dirname(__FILE__);
 use Constants;
 
-my $filter = shift @ARGV;
-$filter = 0 unless defined $filter;
-
 my @unigrams = ();
 my @postags = ();
 my $lastclass = undef;
@@ -42,7 +39,7 @@ while(<STDIN>){
     # Prints the unigrams
     print join ",", @unigrams;
 
-    # Print bigrams (if any) and bigrams of pos and bigrams with word replacements
+    # Print bigrams (if any)
     for my $i (0 .. (scalar(@unigrams) - 2)) {
       print "," . $unigrams[$i] . ";" . $unigrams[$i+1];
     }
