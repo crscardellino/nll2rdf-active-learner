@@ -39,7 +39,7 @@ my $dirpath = shift @ARGV;
 my $oldarff = shift @ARGV;
 my $filter = shift @ARGV;
 
-$filter = 10 unless defined $filter;
+$filter = 25 unless defined $filter;
 
 print STDERR "Getting instances from the unannotated corpus\n";
 

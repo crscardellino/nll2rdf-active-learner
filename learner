@@ -167,7 +167,7 @@ my $untagdir = undef;
 my $outputdir = undef;
 my $query_instances = 5;
 my $tagfilter = 0;
-my $untagfilter = 10;
+my $untagfilter = 25;
 my $passive = '';
 
 print STDERR "NLL2RDF Active Learner Copyright (C) 2014 Cristian A. Cardellino\n";

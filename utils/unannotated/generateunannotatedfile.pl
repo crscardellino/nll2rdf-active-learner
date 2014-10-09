@@ -33,7 +33,7 @@ my $outputdir = shift @ARGV;
 $outputdir = "/tmp/" unless defined $outputdir;
 
 my $filter = shift @ARGV;
-$filter = 10 unless defined $filter;
+$filter = 25 unless defined $filter;
 
 my $directory = dirname (__FILE__);
 
