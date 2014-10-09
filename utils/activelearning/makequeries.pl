@@ -49,7 +49,8 @@ my $i = 1;
 foreach my $query(@queries) {
   print "\nQuery $i:\n\n";
   $i++;
-  system "cat $instancedir/$query.txt";
+  system "fold -w 80 -s $instancedir/$query.txt";
+  die "$!" if ($? >> 8) != 0;
   print "\n";
 
   print "How to classify this query? (write all possible candidates separated by comma):";

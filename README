@@ -1,4 +1,24 @@
 Natural Language Licenses to RDF
 --------------------------------
-
 Text clasification tool for transforming natural language licenses to ODRL RDF data.
+
+Requirements:
+------------
+- Java JRE 1.7
+- Perl 5.16.2 or above
+
+Usage:
+-----
+To start the learning process give execution permissions to the "learner" file or use: `perl learner`:
+
+./learner -t <TAGGED_DIR> -u <UNTAGGED_DIR> -o <OUTPUT_DIR> [-q <NUMBER_OF_QUERIES>] [-f <FILTER_TAGGED_CORPUS>] [-g <FILTER_UNTAGGED_CORPUS>] [--passive]
+
+Options:
+-------
+  TAGGED_DIR             Directory with the annotated files in conll format
+  UNTAGGED_DIR           Directory with the unannotated files in conll format
+  OUTPUT_DIR             Directory where results are written
+  NUMBER_OF_QUERIES      Amount of queries in each step of the Active Learning algorithm (defaults to 5)
+  FILTER_TAGGED_CORPUS   Filter of features for annotated corpus (default to 0)
+  FILTER_UNTAGGED_CORPUS Filter of features for unannotated corpus (default to 10)
+  passive                If flagged, the sampling of the unannotated corpus is random (doesn't use active learning approach)

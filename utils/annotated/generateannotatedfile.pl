@@ -29,24 +29,29 @@ $outputdir = "/tmp/" unless defined $outputdir;
 my $filter = shift @ARGV;
 $filter = 0 unless defined $filter;
 
-my $oldfeaturesdir = shift @ARGV;
+my $olddir = shift @ARGV;
 
 my $directory = dirname (__FILE__);
 
 print STDERR "Creating arff data file with filter $filter for annotated corpus\n";
 
-my $rc = system "find $tagdir -type f -name \"*.conll\" -print0 | xargs -0 cat | perl $directory/getdata.pl > /tmp/annotated.nll2rdf.data";
-die "Error in processing the corpus: $!" if ($rc >> 8) != 0;
+my $rc;
 
-if (defined $oldfeaturesdir) {
-  $rc = system "perl $directory/getmanualdata.pl $oldfeaturesdir $outputdir/instances/tagged >> /tmp/annotated.nll2rdf.data";
+if (defined $olddir) {
+  $rc = system "cp $olddir/data/annotated.nll2rdf.data $outputdir/data/annotated.nll2rdf.data";
+  die "$!" if ($rc >> 8) != 0;
+  
+  $rc = system "perl $directory/getmanualdata.pl $olddir/features $outputdir/instances/tagged >> $outputdir/data/annotated.nll2rdf.data";
   die "Error in processing the manually tagged instances: $!" if ($rc >> 8) != 0;
+} else {
+  $rc = system "find $tagdir -type f -name \"*.conll\" -print0 | xargs -0 cat | perl $directory/getdata.pl > $outputdir/data/annotated.nll2rdf.data";
+  die "Error in processing the corpus: $!" if ($rc >> 8) != 0;
 }
 
-$rc = system "perl $directory/getattributes.pl < /tmp/annotated.nll2rdf.data > /tmp/annotated.nll2rdf.bag";
+$rc = system "perl $directory/getattributes.pl < $outputdir/data/annotated.nll2rdf.data > $outputdir/data/annotated.nll2rdf.bag";
 die "Error in processing the features: $!" if ($rc >> 8) != 0;
 
-$rc = system "perl $directory/generatearff.pl /tmp/annotated.nll2rdf.data $filter < /tmp/annotated.nll2rdf.bag > $outputdir/data/annotated.nll2rdf.arff";
+$rc = system "perl $directory/generatearff.pl $outputdir/data/annotated.nll2rdf.data $filter < $outputdir/data/annotated.nll2rdf.bag > $outputdir/data/annotated.nll2rdf.arff";
 die "Error in creating the arff file: $!" if ($rc >> 8) != 0;
 
 $rc = system "perl $directory/tobinaryclassification.pl $outputdir/data/annotated.nll2rdf.arff $outputdir/data/binary";  

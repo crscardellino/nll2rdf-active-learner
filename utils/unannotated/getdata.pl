@@ -68,7 +68,12 @@ while(readdir $dh) {
   while(<$fh>){
     chomp;
 
-    if ($_ =~ m/^\s*$/) {
+    my @line = split /\s+/, $_;
+
+    my $newinstance = (scalar(@line) <= 1) or ($_ =~ m/^\s*$/);
+    $newinstance = $newinstance or ($line[1] =~ m/[;:]/);
+
+    if ($newinstance) {
       # The data is only good if has at least one of the relevant features
       my %hintunigrams = map { $_ => 1 } grep { exists $relevantfeatures{$_} } @unigrams;
       my %hintbigrams = map { $_ => 1 } grep { exists $relevantfeatures{$_} } @bigrams;
@@ -118,8 +123,6 @@ while(readdir $dh) {
       $instance_number++;
       next;
     }
-
-    my @line = split /\s+/, $_;
 
     next if scalar(@line) != 10;
 

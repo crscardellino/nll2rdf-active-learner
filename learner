@@ -173,7 +173,7 @@ my $passive = '';
 print STDERR "NLL2RDF Active Learner Copyright (C) 2014 Cristian A. Cardellino\n";
 print STDERR "This program comes with ABSOLUTELY NO WARRANTY.\n";
 print STDERR "This is free software, and you are welcome to redistribute it under certain conditions.\n";
-print STDERR "See LICENSE for details, or visit <http://www.gnu.org/licenses/gpl.html>.\n";
+print STDERR "See LICENSE for details, or visit <http://www.gnu.org/licenses/gpl.html>.\n\n";
 
 GetOptions("t=s" => \$tagdir,
            "u=s" => \$untagdir,
@@ -249,7 +249,56 @@ while(!$passive) {
 
   print STDERR "Classifier retrain\n";
 
-  my $rc = system "perl ./utils/annotated/generateannotatedfile.pl $tagdir $outdir $tagfilter $featuresdir";
+  my $rc = system "perl ./utils/annotated/generateannotatedfile.pl $tagdir $outdir $tagfilter $olddir";
+  die if ($rc >> 8) != 0;
+
+  $java = "java -Xmx2048m -cp bin/nll2rdf.jar nll2rdf.classifiers.AnnotatedClassifier";
+  $args = "-a $outdir/data/binary/ -o $outdir/";
+
+  $rc = system $java . " " . $args;
+  die "Error in the training of the initial model: $!" if ($rc >> 8) != 0;
+
+  print_results $iteration, "$outdir/results";
+
+  print "Continue? [y/N]: ";
+  my $ans = <STDIN>;
+
+  last unless $ans =~ m/^[yY]/;
+  $iteration++;
+}
+
+while($passive) {
+  print STDERR "\nPassive learning iteration: $iteration\n";
+
+  my $outdir = "$outputdir/iteration$iteration";
+  mkdir "$outdir";
+  mkdir "$outdir/data";
+  mkdir "$outdir/data/binary";
+  mkdir "$outdir/instances";
+  mkdir "$outdir/instances/tagged";
+  mkdir "$outdir/models";
+  mkdir "$outdir/features";
+  mkdir "$outdir/results";
+
+  my $olddir = sprintf("$outputdir/iteration%d", $iteration - 1);
+  my $featuresdir = "$olddir/features";
+  my $modelsdir = "$olddir/models";
+  my $oldarff = "$olddir/data/annotated.nll2rdf.arff";
+
+  $rc = system "perl ./utils/unannotated/generateunannotatedfile.pl $untagdir $featuresdir $oldarff $outdir $untagfilter";
+  die "$!" if ($rc >> 8) != 0;
+
+  $rc = system "perl ./utils/activelearning/randomqueries.pl $outdir/data/queries.txt $outdir/data/unannotated.nll2rdf.csv $query_instances";
+  die "$!" if ($rc >> 8) != 0;
+
+  print STDERR "\nQueries Annotation\n";
+
+  $rc = system "perl ./utils/activelearning/makequeries.pl $outdir/data/queries.txt $outdir/instances";
+  die "Error in query annotation: $!" if ($rc >> 8) != 0;
+
+  print STDERR "\nClassifier retrain\n";
+
+  my $rc = system "perl ./utils/annotated/generateannotatedfile.pl $tagdir $outdir $tagfilter $olddir";
   die if ($rc >> 8) != 0;
 
   $java = "java -Xmx2048m -cp bin/nll2rdf.jar nll2rdf.classifiers.AnnotatedClassifier";
