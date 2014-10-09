@@ -12,8 +12,8 @@ Requirements:
 - Java JRE 1.7
 - Perl 5.16.2 or above
 - Unix OS (Linux or OSX): This program uses many scripts with access
-	to many unix programs and functions and is not suitable for a
-	Windows environment.
+  to many unix programs and functions and is not suitable for a
+  Windows environment.
 
 Usage:
 -----
@@ -24,46 +24,46 @@ To start the learning process give execution permissions to the "learner" file o
 Options:
 -------
   -t <TAGGED_DIR>
-		Required. TAGGED_DIR must be the path (absolute or relative) to the
-		directory where the initial annotated corpus is stored in conll IOB format in
-		the different subdirectories. The corpus can be obtained in the following
-		link <http://www.cs.famaf.unc.edu.ar/~ccardellino/resources/licensescorpus/licenses_annotated.tar.bz2>.
-		By decompressing the tar file, the needed directory is listed as:
-		"licenses-conll-format".
-  
-	-u UNTAGGED_DIR
-		Required. Directory containing the unannotated corpus, tagged in conll 
-		format. The unannotated corpus can be obtained by following the link:
-		<http://www.cs.famaf.unc.edu.ar/~ccardellino/resources/licensescorpus/licenses_unannotated_conll.tar.bz2>.
-		The directory "conll-corpus" is the target directory.
-  
-	-o OUTPUT_DIR
-		Required. Directory that will storage the data, results and models
-		of each iteration. Should be an emtpy directory.
+    Required. TAGGED_DIR must be the path (absolute or relative) to the
+    directory where the initial annotated corpus is stored in conll IOB format in
+    the different subdirectories. The corpus can be obtained in the following
+    link <http://www.cs.famaf.unc.edu.ar/~ccardellino/resources/licensescorpus/licenses_annotated.tar.bz2>.
+    By decompressing the tar file, the needed directory is listed as:
+    "licenses-conll-format".
+
+  -u UNTAGGED_DIR
+    Required. Directory containing the unannotated corpus, tagged in conll 
+    format. The unannotated corpus can be obtained by following the link:
+    <http://www.cs.famaf.unc.edu.ar/~ccardellino/resources/licensescorpus/licenses_unannotated_conll.tar.bz2>.
+    The directory "conll-corpus" is the target directory.
+
+  -o OUTPUT_DIR
+    Required. Directory that will storage the data, results and models
+    of each iteration. Should be an emtpy directory.
 
   -q NUMBER_OF_QUERIES
-		Optional. A number indicating the number of queries the oracle will
-		annotate manually in each iteration of the algorithm. If not provided
-		it's default value is 5.
+    Optional. A number indicating the number of queries the oracle will
+    annotate manually in each iteration of the algorithm. If not provided
+    it's default value is 5.
 
   -f FILTER_TAGGED_CORPUS
-		Optional. A number that indicates a filter for the times a feature
-		in the annotated corpus shall occur to be taken in consideration for
-		building the model. If not provided it's default value is 0 (all
-		features are considered).
+    Optional. A number that indicates a filter for the times a feature
+    in the annotated corpus shall occur to be taken in consideration for
+    building the model. If not provided it's default value is 0 (all
+    features are considered).
 
   -g FILTER_UNTAGGED_CORPUS
-		Optional. A number that indicates a filter for the times a feature
-		shall occur in the unannotated corpus to be taken in consideration for
-		building the unannotated corpus model. If not provided the default
-		value is 25.
-		NOTE: This number directly affect on the overall performance of the
-		learner. The smaller it is, the slower the algorithm becomes. On
-		bigger numbers, the performance improve but the queries are less
-		useful. Some initial experimentations reveal 25 is a good number.
+    Optional. A number that indicates a filter for the times a feature
+    shall occur in the unannotated corpus to be taken in consideration for
+    building the unannotated corpus model. If not provided the default
+    value is 25.
+    NOTE: This number directly affect on the overall performance of the
+    learner. The smaller it is, the slower the algorithm becomes. On
+    bigger numbers, the performance improve but the queries are less
+    useful. Some initial experimentations reveal 25 is a good number.
 
   -passive
-		Optional. A flag that, if present, will do a Passive Learning approach,
-		that is, will randomly select the instances from the pool of unlabeled
-		instances, instead of using Uncertainty Sampling to select the instances
-		to annotate by the oracle.
+    Optional. A flag that, if present, will do a Passive Learning approach,
+    that is, will randomly select the instances from the pool of unlabeled
+    instances, instead of using Uncertainty Sampling to select the instances
+    to annotate by the oracle.
