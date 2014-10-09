@@ -70,8 +70,8 @@ while(readdir $dh) {
 
     my @line = split /\s+/, $_;
 
-    my $newinstance = (scalar(@line) <= 1) or ($_ =~ m/^\s*$/);
-    $newinstance = $newinstance or ($line[1] =~ m/[;:]/);
+    my $newinstance = ((scalar(@line) <= 1) or ($_ =~ m/^\s*$/));
+    $newinstance = ($newinstance or $line[1] =~ m/[;:]/);
 
     if ($newinstance) {
       # The data is only good if has at least one of the relevant features
@@ -102,25 +102,26 @@ while(readdir $dh) {
         print ",$filename-$instance_number\n";
         
         open(my $ih, ">", "$instances/$filename-$instance_number.txt") or die "Couldn't open instance file for writing: $!";
-        my $instance = join " ", @instance;
-        $instance =~ s/\s([.;:,])/$1/g;
-        $instance =~ s/\-lrb\-\s/\(/g;
-        $instance =~ s/\s\-rrb\-/\)/g;
-        $instance =~ s/\`\`\s/\"/g;
-        $instance =~ s/\s\'\'/\"/g;
-        $instance =~ s/([:;])\s/$1\n/g;
+        my $inst = join " ", @instance;
+        $inst =~ s/\s([.;:,])/$1/g;
+        $inst =~ s/\-lrb\-\s/\(/g;
+        $inst =~ s/\s\-rrb\-/\)/g;
+        $inst =~ s/\`\`\s/\"/g;
+        $inst =~ s/\s\'\'/\"/g;
+        $inst =~ s/([:;])\s/$1\n/g;
 
-        print $ih $instance . "\n";
+        $instance_number++;
+
+        print $ih $inst . "\n";
         close $ih;
       }
 
+      @instance = ();
       @unigrams = ();
       @bigrams = ();
       @trigrams = ();
       $beforelastword = undef;
       $lastword = undef;
-      @instance = ();
-      $instance_number++;
       next;
     }
 
@@ -140,24 +141,23 @@ while(readdir $dh) {
 
     next unless $word =~ m/^[a-zA-Z][a-zA-Z_\-]+$/;
 
-    # my $validpos = $pos =~ m/^(JJ|NN|RB|VB)/; # We only take in consideration Adjectives, Nouns, Adverbs and Verbs in order to reduce the range of values (and avoid overload of the model)
     my $relevantword = exists $relevantfeatures{$word};
-    my $relevantlastword = defined $lastword and exists $relevantfeatures{$lastword};
-    my $relevantbeforelastword = defined $beforelastword and exists $relevantfeatures{$beforelastword};
+    my $relevantlastword = (defined $lastword and exists $relevantfeatures{$lastword});
+    my $relevantbeforelastword = (defined $beforelastword and exists $relevantfeatures{$beforelastword});
 
     if($lastword && $beforelastword) {
       my $element = "$beforelastword;$lastword;$word";
-      push @trigrams, $element if exists $relevantfeatures{$element} or $relevantword or
-                                  $relevantlastword or $relevantbeforelastword;
+      push @trigrams, $element if (exists $relevantfeatures{$element} or $relevantword or
+                                  $relevantlastword or $relevantbeforelastword);
     } 
 
     if($lastword) {
       my $element = "$lastword;$word";
-      push @bigrams, $element if exists $relevantfeatures{$element} or $relevantword
-                                 or $relevantlastword;
+      push @bigrams, $element if (exists $relevantfeatures{$element} or $relevantword
+                                 or $relevantlastword);
     } 
 
-    push @unigrams, "$word" if $relevantword; # or $validpos;
+    push @unigrams, "$word" if $relevantword;
 
     $beforelastword = $lastword;
     $lastword = $word;
