@@ -73,8 +73,10 @@ object AnnotatedClassifier extends Classifier {
         new File(s"${config.outputdir.getCanonicalPath}/results/data.$classname.txt")
       )
 
+      val weight: Int = datafile.attributeStats(datafile.classIndex()).nominalCounts(1)
+
       dataresults.write(f"${eval.kappa}%.2f ${eval.precision(1)}%.2f " +
-        f"${eval.recall(1)}%.2f ${eval.fMeasure(1)}%.2f\n")
+        f"${eval.recall(1)}%.2f ${eval.fMeasure(1)}%.2f $weight\n")
 
       dataresults.close()
 

@@ -41,7 +41,7 @@ my $filter = shift @ARGV;
 
 $filter = 10 unless defined $filter;
 
-print STDERR "Getting instances for the unannotated corpus\n";
+print STDERR "Getting instances from the unannotated corpus\n";
 
 opendir(my $dh, $dirpath) or die "$dirpath is not a valid directory";
 closedir $dh;

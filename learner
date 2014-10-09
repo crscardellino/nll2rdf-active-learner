@@ -21,6 +21,7 @@ use warnings;
 use File::Spec;
 use Getopt::Long;
 use Statistics::Descriptive;
+use Statistics::Descriptive::Weighted;
 
 sub print_help {
   print STDERR "usage:\n";
@@ -47,6 +48,7 @@ sub print_results {
   my @precisions = ();
   my @recalls = ();
   my @fmeasures = ();
+  my @weights = ();
 
   open(my $fh, ">", "$dir/generalresults.txt") or die "$!";
 
@@ -54,7 +56,6 @@ sub print_results {
   print $fh "\nResults for iteration $iteration\n";
   print "KAPPA\tPREC\tRECALL\tF-SCORE\tCLASS\n";
   print $fh "KAPPA\tPREC\tRECALL\tF-SCORE\tCLASS\n";
-  
 
   foreach my $data(@data) {
     my @coeffs = split /\s/, $data;
@@ -70,28 +71,48 @@ sub print_results {
     push @precisions, $coeffs[1];
     push @recalls, $coeffs[2];
     push @fmeasures, $coeffs[3];
+    push @weights, $coeffs[4];
   }
 
   my @stats = ();
+  my @wstats = ();
   
   my $stat = Statistics::Descriptive::Full->new();
   $stat->add_data(@kappas);
   push @stats, $stat;
+  my $wstat = Statistics::Descriptive::Weighted::Full->new();
+  $wstat->add_data(\@kappas, \@weights);
+  push @wstats, $wstat;
 
   $stat = Statistics::Descriptive::Full->new();
   $stat->add_data(@precisions);
   push @stats, $stat;
+  $wstat = Statistics::Descriptive::Weighted::Full->new();
+  $wstat->add_data(\@precisions, \@weights);
+  push @wstats, $wstat;
 
   $stat = Statistics::Descriptive::Full->new();
   $stat->add_data(@recalls);
   push @stats, $stat;
+  $wstat = Statistics::Descriptive::Weighted::Full->new();
+  $wstat->add_data(\@recalls, \@weights);
+  push @wstats, $wstat;
 
   $stat = Statistics::Descriptive::Full->new();
   $stat->add_data(@fmeasures);
   push @stats, $stat;
+  $wstat = Statistics::Descriptive::Weighted::Full->new();
+  $wstat->add_data(\@fmeasures, \@weights);
+  push @wstats, $wstat;
 
   print "\nGeneral Results Stastistics\n";
   print "KAPPA\tPREC\tRECALL\tF-SCORE\tCLASS\n";
+
+  print sprintf("%.2f\t", $wstats[0]->median());
+  print sprintf("%.2f\t", $wstats[1]->median());
+  print sprintf("%.2f\t", $wstats[2]->median());
+  print sprintf("%.2f\t", $wstats[3]->median());
+  print "WEIGHTED MEAN\n";
 
   print sprintf("%.2f\t", $stats[0]->median());
   print sprintf("%.2f\t", $stats[1]->median());
@@ -113,6 +134,12 @@ sub print_results {
 
   print $fh "\nGeneral Results Stastistics\n";
   print $fh "KAPPA\tPREC\tRECALL\tF-SCORE\tCLASS\n";
+
+  print $fh sprintf("%.2f\t", $wstats[0]->median());
+  print $fh sprintf("%.2f\t", $wstats[1]->median());
+  print $fh sprintf("%.2f\t", $wstats[2]->median());
+  print $fh sprintf("%.2f\t", $wstats[3]->median());
+  print $fh "WEIGHTED MEAN\n";
 
   print $fh sprintf("%.2f\t", $stats[0]->median());
   print $fh sprintf("%.2f\t", $stats[1]->median());
@@ -220,7 +247,22 @@ while(!$passive) {
   $rc = system "perl ./utils/activelearning/makequeries.pl $outdir/data/queries.txt $outdir/instances";
   die "Error in query annotation: $!" if ($rc >> 8) != 0;
 
-  # print_results 0, "$outdir/results";
-  <STDIN>;
+  print STDERR "Classifier retrain\n";
+
+  my $rc = system "perl ./utils/annotated/generateannotatedfile.pl $tagdir $outdir $tagfilter $featuresdir";
+  die if ($rc >> 8) != 0;
+
+  $java = "java -Xmx2048m -cp bin/nll2rdf.jar nll2rdf.classifiers.AnnotatedClassifier";
+  $args = "-a $outdir/data/binary/ -o $outdir/";
+
+  $rc = system $java . " " . $args;
+  die "Error in the training of the initial model: $!" if ($rc >> 8) != 0;
+
+  print_results $iteration, "$outdir/results";
+
+  print "Continue? [y/N]: ";
+  my $ans = <STDIN>;
+
+  last unless $ans =~ m/^[yY]/;
   $iteration++;
 }
