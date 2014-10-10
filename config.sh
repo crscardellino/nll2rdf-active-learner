@@ -19,9 +19,22 @@
 echo "Installing perlbrew"
 \curl -L http://install.perlbrew.pl | bash
 
-echo "Adding source ~/perl5/perlbrew/etc/bashrc to ~/.bash_profile"
-echo "source ~/perl5/perlbrew/etc/bashrc >> ~/.bash_profile"
-source ~/.bash_profile
+echo "Adding source ~/perl5/perlbrew/etc/bashrc"
+
+if [ -f ~/.bashrc ];
+then
+  echo "# Source to perlbrew" >> ~/.bashrc
+  echo "source ~/perl5/perlbrew/etc/bashrc" >> ~/.bashrc
+  source ~/.bashrc
+elif [ -f ~/.profile ]
+  echo "# Source to perlbrew" >> ~/.profile
+  echo "source ~/perl5/perlbrew/etc/bashrc" >> ~/.profile
+  source ~/.profile
+else
+  echo "# Source to perlbrew" >> ~/.bash_profile
+  echo "source ~/perl5/perlbrew/etc/bashrc" >> ~/.bash_profile
+  source ~/.bash_profile
+fi
 
 echo "Installing perl 5.16"
 perlbrew install `perlbrew available | egrep -o "perl-5.16.*"`
