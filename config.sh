@@ -40,7 +40,7 @@ echo "Installing perl 5.16"
 perlbrew install `perlbrew available | egrep -o "perl-5.16.*"`
 
 echo "Changing perl version to use"
-perlbrew use `perlbrew list | egrep -o "perl-5.20.*"`
+perlbrew use `perlbrew list | egrep -o "perl-5.16.*"`
 
 echo "Installing cpanm"
 perlbrew install-cpanm
