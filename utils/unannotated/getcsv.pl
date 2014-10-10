@@ -18,7 +18,6 @@
 
 use strict;
 use warnings;
-use Archive::Zip qw( :ERROR_CODES :CONSTANTS );
 use List::Util qw( sum );
 use POSIX qw( floor );
 use String::Util qw( trim );

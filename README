@@ -10,14 +10,43 @@ See LICENSE for details, or visit <http://www.gnu.org/licenses/gpl.html>.
 Requirements:
 ------------
 - Java JRE 1.7
-- Perl 5.16.2 or above
 - Unix OS (Linux or OSX): This program uses many scripts with access
   to many unix programs and functions and is not suitable for a
   Windows environment.
+- Perl 5.16.2 or above with the following modules:
+  - autodie
+  - File::Basename
+  - File::Spec
+  - Getopt::Long
+  - List::MoreUtils
+  - List::Util
+  - POSIX
+  - Statistics::Descriptive
+  - Statistics::Descriptive::Weighted
+  - String::Util
+
+Perl modules:
+------------
+For the perl libraries I advice the installation of perlbrew and cpanm. Visit <http://perlbrew.pl/> for
+information on this installation. You can follow the steps descriptive above, or you can run `bash config.sh`
+to do it automatically (not guaranteed to work).
+
+$ \curl -L http://install.perlbrew.pl | bash # Installation of perlbrew
+
+After the installation add: `source ~/perl5/perlbrew/etc/bashrc`
+to your ~/.bashrc or ~/.bash_profile file.
+
+Install an available version of `perl-5.16` (for example perl-5.16.3) with: `perlbrew install perl-5.16.3`.
+
+When installation is complete, select the installed perl version with `perlbrew use perl-5.16.3`.
+
+Install cpanm with: `perlbrew install-cpanm`.
+
+Run `bash install_modules.sh` to install the necessary modules.
 
 Usage:
 -----
-To start the learning process give execution permissions to the "learner" file or use: `perl learner`:
+To start the learning process give execution permissions to the "learner" file or use `perl learner`:
 
 ./learner -t <TAGGED_DIR> -u <UNTAGGED_DIR> -o <OUTPUT_DIR> [-q <NUMBER_OF_QUERIES>] [-f <FILTER_TAGGED_CORPUS>] [-g <FILTER_UNTAGGED_CORPUS>] [--passive]
 
