@@ -18,7 +18,7 @@
 
 use strict;
 use warnings;
-use String::Util qw(trim);
+use String::Util qw/ trim /;
 
 my $instancefile = shift @ARGV;
 my $instancedir = shift @ARGV;

@@ -18,9 +18,9 @@
 
 use strict;
 use warnings;
-use List::Util qw( sum );
-use POSIX qw( floor );
-use String::Util qw( trim );
+use List::Util qw/ sum /;
+use POSIX qw/ floor /;
+use String::Util qw/ trim /;
 
 sub get_progress {
   my $totalexamples = shift @_;

@@ -16,10 +16,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-use autodie;
 use strict;
 use warnings;
-use List::MoreUtils qw(firstidx);
+use List::MoreUtils qw/ firstidx /;
 
 my $attrfile = shift @ARGV;
 my $outdir = shift @ARGV;
@@ -38,7 +37,7 @@ $classes[scalar(@classes)-1] =~ s/}//;
 my @files = ();
 
 foreach my $class(@classes) {
-  open(my $fh, ">", "$outdir/$class.arff");
+  open(my $fh, ">", "$outdir/$class.arff") or die $!;
 
   push @files, $fh;
 

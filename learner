@@ -20,8 +20,6 @@ use strict;
 use warnings;
 use File::Spec;
 use Getopt::Long;
-use Statistics::Descriptive;
-use Statistics::Descriptive::Weighted;
 
 sub print_help {
   print STDERR "usage:\n";
@@ -40,124 +38,15 @@ sub print_results {
   my $iteration = shift;
   my $dir = shift;
 
-  my @data = `find $dir -name "data.*.txt" -print0 | xargs -0 -I {} sh -c 'printf {}; printf " "; cat {}'`;
-  die "$!" if ($? >> 8) != 0;
-  chomp @data;
-
-  my @kappas = ();
-  my @precisions = ();
-  my @recalls = ();
-  my @fmeasures = ();
-  my @weights = ();
-
-  open(my $fh, ">", "$dir/generalresults.txt") or die "$!";
+  open(my $fh, "<", "$dir/generalresults.txt") or die "$!";
 
   print "\nResults for iteration $iteration\n";
-  print $fh "\nResults for iteration $iteration\n";
-  print "KAPPA\tPREC\tRECALL\tF-SCORE\tCLASS\n";
-  print $fh "KAPPA\tPREC\tRECALL\tF-SCORE\tCLASS\n";
+  do {
+    local $/;
+    my $file = <$fh>;
 
-  foreach my $data(@data) {
-    my @coeffs = split /\s/, $data;
-    my ($volume, $directory, $filename) = File::Spec->splitpath(shift @coeffs);
-    
-    my $name = (split /\./, $filename)[1];
-
-    print $coeffs[0] . "\t" . $coeffs[1] . "\t" . $coeffs[2] . "\t" . $coeffs[3] . "\t";
-    print $fh $coeffs[0] . "\t" . $coeffs[1] . "\t" . $coeffs[2] . "\t" . $coeffs[3] . "\t";
-    print uc($name) . "\n";
-    print $fh uc($name) . "\n";
-    push @kappas, $coeffs[0];
-    push @precisions, $coeffs[1];
-    push @recalls, $coeffs[2];
-    push @fmeasures, $coeffs[3];
-    push @weights, $coeffs[4];
-  }
-
-  my @stats = ();
-  my @wstats = ();
-  
-  my $stat = Statistics::Descriptive::Full->new();
-  $stat->add_data(@kappas);
-  push @stats, $stat;
-  my $wstat = Statistics::Descriptive::Weighted::Full->new();
-  $wstat->add_data(\@kappas, \@weights);
-  push @wstats, $wstat;
-
-  $stat = Statistics::Descriptive::Full->new();
-  $stat->add_data(@precisions);
-  push @stats, $stat;
-  $wstat = Statistics::Descriptive::Weighted::Full->new();
-  $wstat->add_data(\@precisions, \@weights);
-  push @wstats, $wstat;
-
-  $stat = Statistics::Descriptive::Full->new();
-  $stat->add_data(@recalls);
-  push @stats, $stat;
-  $wstat = Statistics::Descriptive::Weighted::Full->new();
-  $wstat->add_data(\@recalls, \@weights);
-  push @wstats, $wstat;
-
-  $stat = Statistics::Descriptive::Full->new();
-  $stat->add_data(@fmeasures);
-  push @stats, $stat;
-  $wstat = Statistics::Descriptive::Weighted::Full->new();
-  $wstat->add_data(\@fmeasures, \@weights);
-  push @wstats, $wstat;
-
-  print "\nGeneral Results Stastistics\n";
-  print "KAPPA\tPREC\tRECALL\tF-SCORE\tCLASS\n";
-
-  print sprintf("%.2f\t", $wstats[0]->median());
-  print sprintf("%.2f\t", $wstats[1]->median());
-  print sprintf("%.2f\t", $wstats[2]->median());
-  print sprintf("%.2f\t", $wstats[3]->median());
-  print "WEIGHTED MEAN\n";
-
-  print sprintf("%.2f\t", $stats[0]->median());
-  print sprintf("%.2f\t", $stats[1]->median());
-  print sprintf("%.2f\t", $stats[2]->median());
-  print sprintf("%.2f\t", $stats[3]->median());
-  print "MEDIAN\n";
-
-  print sprintf("%.2f\t", $stats[0]->mean());
-  print sprintf("%.2f\t", $stats[1]->mean());
-  print sprintf("%.2f\t", $stats[2]->mean());
-  print sprintf("%.2f\t", $stats[3]->mean());
-  print "MEAN\n";
-  
-  print sprintf("%.2f\t", $stats[0]->standard_deviation());
-  print sprintf("%.2f\t", $stats[1]->standard_deviation());
-  print sprintf("%.2f\t", $stats[2]->standard_deviation());
-  print sprintf("%.2f\t", $stats[3]->standard_deviation());
-  print "SDEV\n";
-
-  print $fh "\nGeneral Results Stastistics\n";
-  print $fh "KAPPA\tPREC\tRECALL\tF-SCORE\tCLASS\n";
-
-  print $fh sprintf("%.2f\t", $wstats[0]->median());
-  print $fh sprintf("%.2f\t", $wstats[1]->median());
-  print $fh sprintf("%.2f\t", $wstats[2]->median());
-  print $fh sprintf("%.2f\t", $wstats[3]->median());
-  print $fh "WEIGHTED MEAN\n";
-
-  print $fh sprintf("%.2f\t", $stats[0]->median());
-  print $fh sprintf("%.2f\t", $stats[1]->median());
-  print $fh sprintf("%.2f\t", $stats[2]->median());
-  print $fh sprintf("%.2f\t", $stats[3]->median());
-  print $fh "MEDIAN\n";
-
-  print $fh sprintf("%.2f\t", $stats[0]->mean());
-  print $fh sprintf("%.2f\t", $stats[1]->mean());
-  print $fh sprintf("%.2f\t", $stats[2]->mean());
-  print $fh sprintf("%.2f\t", $stats[3]->mean());
-  print $fh "MEAN\n";
-  
-  print $fh sprintf("%.2f\t", $stats[0]->standard_deviation());
-  print $fh sprintf("%.2f\t", $stats[1]->standard_deviation());
-  print $fh sprintf("%.2f\t", $stats[2]->standard_deviation());
-  print $fh sprintf("%.2f\t", $stats[3]->standard_deviation());
-  print $fh "SDEV\n";
+    print $file . "\n";
+  };
 
   close $fh;
 }

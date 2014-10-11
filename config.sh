@@ -16,8 +16,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-echo "Installing perlbrew"
-\curl -L http://install.perlbrew.pl | bash
+if hash curl 2> /dev/null;
+then
+  echo "Installing perlbrew"
+  \curl -L http://install.perlbrew.pl | bash
+else
+  echo "You need to install curl"
+  exit 1
+fi
 
 echo "Adding source ~/perl5/perlbrew/etc/bashrc"
 
@@ -36,14 +42,15 @@ fi
 
 source ~/perl5/perlbrew/etc/bashrc
 
-echo "Installing perl 5.16"
-perlbrew install `perlbrew available | egrep -o "perl-5.16.*"`
+echo "Installing perl 5.18"
+perlbrew install `perlbrew available | egrep -o "perl-5.18.*"`
 
 echo "Changing perl version to use"
-perlbrew use `perlbrew list | egrep -o "perl-5.20.*"`
+perlbrew use `perlbrew list | egrep -o "perl-5.18.*"`
 
 echo "Installing cpanm"
 perlbrew install-cpanm
 
-echo "Installing the modules"
-bash install_modules.sh
+echo "Installing Modules"
+cpanm List::MoreUtils
+cpanm String::Util

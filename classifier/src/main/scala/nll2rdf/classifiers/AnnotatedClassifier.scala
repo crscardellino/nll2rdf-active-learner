@@ -20,8 +20,11 @@ package nll2rdf.classifiers
 
 import java.io.{File, PrintWriter}
 import java.util.Random
-
 import nll2rdf.utils.SimpleLogisticRegression
+import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics
+import org.apache.commons.math3.stat.descriptive.moment.Mean
+import scala.collection.JavaConversions._
+import scala.collection.mutable.ArrayBuffer
 import weka.classifiers.Evaluation
 import weka.core.Instances
 import weka.core.converters.ConverterUtils.DataSource
@@ -46,6 +49,20 @@ object AnnotatedClassifier extends Classifier {
     val total: Double = config.arff_files.list.length.toDouble
     print_progress(0, total)
 
+    val kappaStats: DescriptiveStatistics = new DescriptiveStatistics()
+    val precisionStats: DescriptiveStatistics = new DescriptiveStatistics()
+    val recallStats: DescriptiveStatistics = new DescriptiveStatistics()
+    val fmeasureStats: DescriptiveStatistics = new DescriptiveStatistics()
+    val weightedmean: Mean = new Mean()
+    val weigths: ArrayBuffer[Double] = ArrayBuffer()
+
+    val generalresults: PrintWriter = new PrintWriter(
+      new File(s"${config.outputdir.getCanonicalPath}/results/generalresults.txt")
+    )
+
+    generalresults.write("General Statistics\n")
+    generalresults.write("KAPPA\tPREC\tRECALL\tF-SCORE\tCLASS\n")
+
     for ((file, idx) <- config.arff_files.listFiles().zipWithIndex) {
       val classname: String = file.getName.split('.')(0).toLowerCase
 
@@ -69,16 +86,14 @@ object AnnotatedClassifier extends Classifier {
 
       results.close()
 
-      val dataresults: PrintWriter = new PrintWriter(
-        new File(s"${config.outputdir.getCanonicalPath}/results/data.$classname.txt")
-      )
+      kappaStats.addValue(eval.kappa)
+      precisionStats.addValue(eval.precision(1))
+      recallStats.addValue(eval.recall(1))
+      fmeasureStats.addValue(eval.fMeasure(1))
+      weigths += datafile.attributeStats(datafile.classIndex()).nominalCounts(1).toDouble
 
-      val weight: Int = datafile.attributeStats(datafile.classIndex()).nominalCounts(1)
-
-      dataresults.write(f"${eval.kappa}%.2f ${eval.precision(1)}%.2f " +
-        f"${eval.recall(1)}%.2f ${eval.fMeasure(1)}%.2f $weight\n")
-
-      dataresults.close()
+      generalresults.write(f"${eval.kappa}%.2f\t${eval.precision(1)}%.2f\t" +
+        f"${eval.recall(1)}%.2f\t${eval.fMeasure(1)}%.2f\t${classname.toUpperCase}\n")
 
       weka.core.SerializationHelper.write(
         s"${config.outputdir.getCanonicalPath}/models/$classname.model",
@@ -97,6 +112,36 @@ object AnnotatedClassifier extends Classifier {
 
       print_progress(idx + 1, total)
     }
+
+    /* Weighted means */
+    generalresults.write(f"${weightedmean.evaluate(kappaStats.getValues, weigths.toArray)}%.2f\t")
+    generalresults.write(f"${weightedmean.evaluate(precisionStats.getValues, weigths.toArray)}%.2f\t")
+    generalresults.write(f"${weightedmean.evaluate(recallStats.getValues, weigths.toArray)}%.2f\t")
+    generalresults.write(f"${weightedmean.evaluate(fmeasureStats.getValues, weigths.toArray)}%.2f\t")
+    generalresults.write("WEIGHTED MEAN\n")
+
+    /* Median */
+    generalresults.write(f"${kappaStats.getPercentile(50)}%.2f\t")
+    generalresults.write(f"${precisionStats.getPercentile(50)}%.2f\t")
+    generalresults.write(f"${recallStats.getPercentile(50)}%.2f\t")
+    generalresults.write(f"${fmeasureStats.getPercentile(50)}%.2f\t")
+    generalresults.write("MEDIAN\n")
+
+    /* Mean */
+    generalresults.write(f"${kappaStats.getMean}%.2f\t")
+    generalresults.write(f"${precisionStats.getMean}%.2f\t")
+    generalresults.write(f"${recallStats.getMean}%.2f\t")
+    generalresults.write(f"${fmeasureStats.getMean}%.2f\t")
+    generalresults.write("MEAN\n")
+
+    /* Standard Deviation */
+    generalresults.write(f"${kappaStats.getStandardDeviation}%.2f\t")
+    generalresults.write(f"${precisionStats.getStandardDeviation}%.2f\t")
+    generalresults.write(f"${recallStats.getStandardDeviation}%.2f\t")
+    generalresults.write(f"${fmeasureStats.getStandardDeviation}%.2f\t")
+    generalresults.write("STANDARD DEVIATION\n")
+
+    generalresults.close()
 
     Console.err.println()
   }
