@@ -83,11 +83,12 @@ Options:
     Optional. A number that indicates a filter for the times a feature
     shall occur in the unannotated corpus to be taken in consideration for
     building the unannotated corpus model. If not provided the default
-    value is 25.
+    value is 10.
     NOTE: This number directly affect on the overall performance of the
     learner. The smaller it is, the slower the algorithm becomes. On
     bigger numbers, the performance improve but the queries are less
-    useful. Some initial experimentations reveal 25 is a good number.
+    useful. On initial experiments, a number between 10 and 20 is the
+    best option.
 
   -passive
     Optional. A flag that, if present, will do a Passive Learning approach,
