@@ -20,7 +20,7 @@ use strict;
 use warnings;
 use File::Basename;
 use lib dirname(__FILE__);
-use Constants;
+use Constants qw / get_class get_rule /;
 
 my @unigrams = ();
 my @postags = ();

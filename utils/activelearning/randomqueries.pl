@@ -18,7 +18,7 @@
 
 use strict;
 use warnings;
-use List::Util qw( shuffle );
+use List::Util qw/ shuffle /;
 
 my $outfile = shift @ARGV;
 my $instances = shift @ARGV;

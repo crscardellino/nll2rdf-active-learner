@@ -60,7 +60,8 @@ object AnnotatedClassifier extends Classifier {
       new File(s"${config.outputdir.getCanonicalPath}/results/generalresults.txt")
     )
 
-    generalresults.write("General Statistics\n")
+    generalresults.write("General Results\n")
+    generalresults.write("===============\n")
     generalresults.write("KAPPA\tPREC\tRECALL\tF-SCORE\tCLASS\n")
 
     for ((file, idx) <- config.arff_files.listFiles().zipWithIndex) {
@@ -112,6 +113,9 @@ object AnnotatedClassifier extends Classifier {
 
       print_progress(idx + 1, total)
     }
+
+    generalresults.write("\nGeneral Results Statistics\n")
+    generalresults.write("==========================\n")
 
     /* Weighted means */
     generalresults.write(f"${weightedmean.evaluate(kappaStats.getValues, weigths.toArray)}%.2f\t")

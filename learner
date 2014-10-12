@@ -40,7 +40,7 @@ sub print_results {
 
   open(my $fh, "<", "$dir/generalresults.txt") or die "$!";
 
-  print "\nResults for iteration $iteration\n";
+  print "\nResults for iteration $iteration\n\n";
   do {
     local $/;
     my $file = <$fh>;
@@ -56,8 +56,9 @@ my $untagdir = undef;
 my $outputdir = undef;
 my $query_instances = 5;
 my $tagfilter = 0;
-my $untagfilter = 25;
+my $untagfilter = 10;
 my $passive = '';
+my $rc; my $java; my $args;
 
 print STDERR "NLL2RDF Active Learner Copyright (C) 2014 Cristian A. Cardellino\n";
 print STDERR "This program comes with ABSOLUTELY NO WARRANTY.\n";
@@ -84,13 +85,13 @@ mkdir "$outputdir/iteration0/models";
 mkdir "$outputdir/iteration0/features";
 mkdir "$outputdir/iteration0/results";
 
-my $rc = system "perl ./utils/annotated/generateannotatedfile.pl $tagdir $outputdir/iteration0 $tagfilter";
+$rc = system "perl ./utils/annotated/generateannotatedfile.pl $tagdir $outputdir/iteration0 $tagfilter";
 die if ($rc >> 8) != 0;
 
 print STDERR "Annotated corpus initial training\n";
 
-my $java = "java -Xmx2048m -cp bin/nll2rdf.jar nll2rdf.classifiers.AnnotatedClassifier";
-my $args = "-a $outputdir/iteration0/data/binary/ -o $outputdir/iteration0/";
+$java = "java -Xmx2048m -cp bin/nll2rdf.jar nll2rdf.classifiers.AnnotatedClassifier";
+$args = "-a $outputdir/iteration0/data/binary/ -o $outputdir/iteration0/";
 
 $rc = system $java . " " . $args;
 die "Error in the training of the initial model: $!" if ($rc >> 8) != 0;
@@ -125,8 +126,8 @@ while(!$passive) {
   my $instance_count = `wc -l $outdir/data/unannotated.nll2rdf.csv | awk '{ print \$1 }'`;
   chomp $instance_count;
 
-  my $java = "java -Xmx2048m -cp bin/nll2rdf.jar nll2rdf.classifiers.UnannotatedClassifier";
-  my $args = "-c $outdir/data/unannotated.nll2rdf.csv -m $modelsdir/ -o $outdir/ -a $oldarff -i $instance_count -q $query_instances";
+  $java = "java -Xmx2048m -cp bin/nll2rdf.jar nll2rdf.classifiers.UnannotatedClassifier";
+  $args = "-c $outdir/data/unannotated.nll2rdf.csv -m $modelsdir/ -o $outdir/ -a $oldarff -i $instance_count -q $query_instances";
 
   $rc = system $java . " " . $args;
   die "Error in the querying: $!" if ($rc >> 8) != 0;

@@ -38,9 +38,9 @@ my $dirpath = shift @ARGV;
 my $oldarff = shift @ARGV;
 my $filter = shift @ARGV;
 
-$filter = 25 unless defined $filter;
+$filter = 10 unless defined $filter;
 
-print STDERR "Getting instances from the unannotated corpus\n";
+print STDERR "Getting data from unannotated instances\n";
 
 opendir(my $dh, $dirpath) or die "$dirpath is not a valid directory";
 closedir $dh;

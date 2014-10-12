@@ -50,7 +50,7 @@ chomp @features;
 
 my %relevantfeatures = map { $_ => 1 } @features;
 
-print STDERR "Reading and writing data examples\n";
+print STDERR "Getting instances from unannotated corpus\n";
 
 while(readdir $dh) {
   next unless $_ !~ m/^\./;
@@ -72,6 +72,14 @@ while(readdir $dh) {
 
     my $newinstance = ((scalar(@line) <= 1) or ($_ =~ m/^\s*$/));
     $newinstance = ($newinstance or $line[1] =~ m/[;:]/);
+    $newinstance = ($newinstance or $line[1] =~ m/[;:]/);
+    my $isitem = 0;
+
+    if (defined $line[1] and defined($lastword) and ($lastword =~ m/^[a-z](i*|[xv]?)$/)) {
+      $isitem = (lc($line[1]) eq '-rrb-');
+    }
+
+    $newinstance = ($newinstance or $isitem);
 
     if ($newinstance) {
       # The data is only good if has at least one of the relevant features
@@ -100,7 +108,12 @@ while(readdir $dh) {
         }
 
         print ",$filename-$instance_number\n";
-        
+
+        if ($isitem) { # We remove the item word (e.g. the roman number)
+          pop @instance;
+          pop @instance if $instance[scalar(@instance) - 1] eq '-lrb-';
+        }
+
         open(my $ih, ">", "$instances/$filename-$instance_number.txt") or die "Couldn't open instance file for writing: $!";
         my $inst = join " ", @instance;
         $inst =~ s/\s([.;:,])/$1/g;
@@ -135,11 +148,11 @@ while(readdir $dh) {
     $word =~ s/''//g;
     $word =~ s/[:;,\.\"]//g;
 
-    my $pos = $line[3];
-    $pos =~ s/''/_/;
-    $pos =~ s/:/-/;
-
-    next unless $word =~ m/^[a-zA-Z][a-zA-Z_\-]+$/;
+    unless($word =~ m/^[a-zA-Z][a-zA-Z_\-]+$/) {
+      $beforelastword = $lastword;
+      $lastword = $word;
+      next;
+    }
 
     my $relevantword = exists $relevantfeatures{$word};
     my $relevantlastword = (defined $lastword and exists $relevantfeatures{$lastword});
