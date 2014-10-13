@@ -38,9 +38,7 @@ When installation is complete, select the installed perl version with
 
 Install cpanm with: `perlbrew install-cpanm`.
 
-Install the modules:
-  - `cpanm List::MoreUtils`
-  - `cpanm String::Util`
+Install the modules: `cpanm List::MoreUtils String::Util`
 
 Usage:
 -----
