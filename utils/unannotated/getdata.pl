@@ -148,7 +148,7 @@ while(readdir $dh) {
     $word =~ s/''//g;
     $word =~ s/[:;,\.\"]//g;
 
-    unless($word =~ m/^[a-zA-Z][a-zA-Z_\-]+$/) {
+    unless($word =~ m/^[a-zA-Z][a-zA-Z_\-]*$/) {
       $beforelastword = $lastword;
       $lastword = $word;
       next;
