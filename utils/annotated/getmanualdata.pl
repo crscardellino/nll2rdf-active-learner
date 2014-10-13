@@ -51,7 +51,7 @@ while(readdir $dh) {
     }
   }
 
-  my @other_classes = `find $instancesdir/ -name "$1.*.txt" -not -name "$1.$2.txt" -type f -print0 | xargs -0 basename | egrep -o "\\.[A-Z\\-]*\\." | tr -d '.'`;
+  my @other_classes = `find $instancesdir/ -name "$1.*.txt" -not -name "$1.$2.txt" -type f -print0 | xargs -0 -I % basename % | egrep -o "\\.[A-Z\\-]*\\." | tr -d '.'`;
   chomp @other_classes;
 
   @other_classes = grep { $_ ne "no-class" } (map { lc $_ } @other_classes);
