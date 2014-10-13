@@ -25,7 +25,7 @@ class QueriesSet(val size: Int) {
 
   private def max: Double = queries.values.max
 
-  def checkFit(value: Double): Boolean = if (queries.size < size) true else 0.5 < value && value < max
+  def checkFit(value: Double): Boolean = if (queries.size < size) true else value < max
 
   def addValue(instanceid: String, value: Double) {
     if (checkFit(value))

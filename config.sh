@@ -52,5 +52,4 @@ echo "Installing cpanm"
 perlbrew install-cpanm
 
 echo "Installing Modules"
-cpanm List::MoreUtils
-cpanm String::Util
+cpanm List::MoreUtils String::Util

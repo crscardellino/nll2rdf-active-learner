@@ -24,19 +24,23 @@ my $outfile = shift @ARGV;
 my $instances = shift @ARGV;
 my $queries_count = shift @ARGV;
 
+print STDERR "Making random queries (passive learning)\n";
+
 open(my $fh, "> $outfile") or die "$!";
 open(my $dh, $instances) or die "$!";
 close $dh;
 
 $queries_count = 5 unless defined $queries_count;
 
-my @instancesid = `awk -F, '{ print \$1 }' | tr -d "'"`;
+my @instancesid = `awk -F, '{ print \$1 }' $instances`;
 chomp @instancesid;
 
 my @queries = (shuffle(@instancesid))[0..$queries_count-1];
 
+print STDERR "Writing queries\n";
+
 foreach my $query(@queries) {
-  print $fh "'$query',0.0";
+  print $fh "$query,0.0\n";
 }
 
 close $fh;

@@ -109,9 +109,9 @@ while(readdir $dh) {
 
         print ",$filename-$instance_number\n";
 
-        if ($isitem) { # We remove the item word (e.g. the roman number)
-          pop @instance;
-          pop @instance if $instance[scalar(@instance) - 1] eq '-lrb-';
+        if ($isitem) {
+          pop @instance if(scalar(@instance) > 1); # Remove the last word
+          pop @instance if(scalar(@instance) > 1) and $instance[$#instance] eq '-lrb-';
         }
 
         open(my $ih, ">", "$instances/$filename-$instance_number.txt") or die "Couldn't open instance file for writing: $!";
@@ -121,6 +121,7 @@ while(readdir $dh) {
         $inst =~ s/\s\-rrb\-/\)/g;
         $inst =~ s/\`\`\s/\"/g;
         $inst =~ s/\s\'\'/\"/g;
+        $inst =~ s/\s\'s/\'s/g;
         $inst =~ s/([:;])\s/$1\n/g;
 
         $instance_number++;
@@ -145,10 +146,15 @@ while(readdir $dh) {
     push @instance, $word; # Useful for Active Learning with the oracle
 
     $word =~ s/'s/s/g;
-    $word =~ s/''//g;
-    $word =~ s/[:;,\.\"]//g;
+    $word =~ s/\'\'/<QUOTES>/g;
+    $word =~ s/\"/<QUOTES>/g;
+    $word =~ s/:/<COLON>/g;
+    $word =~ s/,/<COMMA>/g;
+    $word =~ s/;/<SEMICOLON>/g;
+    $word =~ s/\./<DOT>/g;
+    $word =~ s/^[0-9]+$/<NUMBER>/g;
 
-    unless($word =~ m/^[a-zA-Z][a-zA-Z_\-]*$/) {
+    unless($word =~ m/^[a-z\<][a-zA-Z_\-\>]*$/) {
       $beforelastword = $lastword;
       $lastword = $word;
       next;

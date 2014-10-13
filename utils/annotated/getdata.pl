@@ -74,10 +74,14 @@ while(<STDIN>){
 
   my $word = lc $line[1];
   $word =~ s/'s/s/g;
-  $word =~ s/''/_/g;
-  $word =~ s/:/-/g;
+  $word =~ s/''/<QUOTES>/g;
+  $word =~ s/:/<COLON>/g;
+  $word =~ s/,/<COMMA>/g;
+  $word =~ s/;/<SEMICOLON>/g;
+  $word =~ s/\./<DOT>/g;
+  $word =~ s/^[0-9]+$/<NUMBER>/g;
 
-  next unless $word =~ m/[a-zA-Z_\-]+/;
+  next unless $word =~ m/^[a-z\<][a-zA-Z_\-\>]*$/;
 
   my $pos = $line[3];
   $pos =~ s/''/_/;
