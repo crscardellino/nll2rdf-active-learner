@@ -72,9 +72,11 @@ object UnannotatedClassifier extends Classifier {
 
       for((v, i) <- instance_data(1).split(",").zipWithIndex) instance.setValue(i, v.toDouble)
 
-      val max: Double = (for(learner <- models) yield learner.distributionForInstance(instance)(1)).max
+      val classification: Array[Double] = for(learner <- models) yield learner.distributionForInstance(instance)(1)
+      val max: Double = classification.max
+      val candidates: Int = classification.filter(_ == max).length
 
-      queries.addValue(instance_data(0), max)
+      queries.addValue(instance_data(0), max, candidates)
     }
 
     Console.err.println()
@@ -83,7 +85,7 @@ object UnannotatedClassifier extends Classifier {
       new File(s"${config.outputdir.getCanonicalPath}/data/queries.txt")
     )
 
-    for((instanceid, value) <- queries.queries) attrdata.write(f"$instanceid,$value%.2f\n")
+    for((instanceid, (value, candidates)) <- queries.queries) attrdata.write(f"$instanceid,$value%.2f,$candidates%d\n")
 
     attrdata.close()
   }

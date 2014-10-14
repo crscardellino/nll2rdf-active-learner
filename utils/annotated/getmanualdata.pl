@@ -19,88 +19,26 @@
 use strict;
 use warnings;
 
-my $featuresdir = shift @ARGV;
+my $datafile = shift @ARGV;
 my $instancesdir = shift @ARGV;
 
-opendir(my $dh, $featuresdir) or die "Must provide a valid features directory";
-closedir $dh;
-opendir($dh, $instancesdir) or die "Must provide a valid instances directory";
+open(my $fh, $datafile) or die $!;
+close $fh;
+opendir(my $dh, $instancesdir) or die "Must provide a valid instances directory";
+
+print STDERR "Adding manually annotated data to the corpus\n";
 
 while(readdir $dh) {
   next unless $_ =~ m/^([^A-Z]+)\.([A-Z\-]+)\.txt$/;
   my $instance = $1;
   my $class = $2;
-  my @unigrams = ();
 
-  open(my $fh, "< $instancesdir/$_") or die "$!";
+  my @data = split ",", `grep "$instance\$" $datafile`;
 
-  while(<$fh>) {
-    chomp;
+  die $! if ($? >> 8) != 0;
 
-    my @line = split /\s+/, $_;
-
-    foreach my $word(@line) {
-      $word = lc $word;
-      $word =~ s/'s/s/g;
-      $word =~ s/''//g;
-      $word =~ s/[:;,\.\"\(\)]//g;
-
-      next unless $word =~ m/[a-z_\-]+/;
-
-      push @unigrams, $word;
-    }
-  }
-
-  my @other_classes = `find $instancesdir/ -name "$1.*.txt" -not -name "$1.$2.txt" -type f -print0 | xargs -0 -I % basename % | egrep -o "\\.[A-Z\\-]*\\." | tr -d '.'`;
-  chomp @other_classes;
-
-  @other_classes = grep { $_ ne "no-class" } (map { lc $_ } @other_classes);
-  my %filtering_features = ();
-
-  foreach my $other_class(@other_classes) {
-    my @features = `cat $featuresdir/features.$other_class.txt`;
-    chomp @features;
-    %filtering_features = map { $_ => 1 } keys(%filtering_features), @features;
-  }
-
-  my @data = ();
-
-  # Print filtered unigrams
-  push(@data, grep { !exists $filtering_features{$_} } @unigrams);
-
-  # Print bigrams (if any)
-  for my $i (0 .. (scalar(@unigrams) - 2)) {
-    my $value = $unigrams[$i] . ";" . $unigrams[$i+1];
-    push (@data, $value) unless exists $filtering_features{$value};
-  }
-
-  # Print trigrams (if any)
-  for my $i (0 .. (scalar(@unigrams) - 3)) {
-    my $value = $unigrams[$i] . ";" . $unigrams[$i+1] . ";" . $unigrams[$i+2];
-    push (@data, $value) unless exists $filtering_features{$value};
-  }
-
-  # Print uniskipbigram (if any)
-  for my $i (0 .. (scalar(@unigrams) - 3)) {
-    my $value = $unigrams[$i] . ";" . $unigrams[$i+2];
-    push (@data, $value) unless exists $filtering_features{$value};
-  }
-
-  # Print biskipbigram (if any)
-  for my $i (0 .. (scalar(@unigrams) - 4)) {
-    my $value = $unigrams[$i] . ";" . $unigrams[$i+3];
-    push (@data, $value) unless exists $filtering_features{$value};
-  }
-  
-  # uniskiptrigram
-  for my $i (0 .. scalar(@unigrams) - 5) {
-    my $value = $unigrams[$i] . ";" . $unigrams[$i+2] . ";" . $unigrams[$i+4];
-    push (@data, $value) unless exists $filtering_features{$value};
-  }
-
-  if (scalar(@data) > 0) {
-    print join(",", @data) . ",$class\n";
-  }
+  pop @data;
+  print join(",", @data) . ",$class\n";
 }
 
 closedir $dh;

@@ -21,17 +21,20 @@ package nll2rdf.utils
 import scala.collection.mutable.{Map => MMap}
 
 class QueriesSet(val size: Int) {
-  val queries: MMap[String, Double] = MMap()
+  val queries: MMap[String, (Double, Int)] = MMap()
 
-  private def max: Double = queries.values.max
+  private def max: Double = queries.maxBy(_._2._1)._2._1
 
-  def checkFit(value: Double): Boolean = if (queries.size < size) true else value < max
+  private def maxQuery: String = queries.maxBy(_._2._1)._1
 
-  def addValue(instanceid: String, value: Double) {
-    if (checkFit(value))
-      queries += (instanceid -> value)
+  private def checkFit(value: Double, candidates: Int): Boolean =
+    if (queries.size < size) true else value < max || (value == max && candidates < queries(maxQuery)._2)
+
+  def addValue(instanceid: String, value: Double, candidates: Int) {
+    if (checkFit(value, candidates))
+      queries += (instanceid -> (value, candidates))
 
     if(queries.size > size)
-      queries -= queries.maxBy(_._2)._1
+      queries -= maxQuery
   }
 }
