@@ -24,7 +24,7 @@ my $tagdir = shift @ARGV;
 die "You have to provide a valid directory of the tagged corpus" unless defined $tagdir;
 
 my $outputdir = shift @ARGV;
-$outputdir = "/tmp/" unless defined $outputdir;
+die unless defined $outputdir;
 
 my $filter = shift @ARGV;
 $filter = 0 unless defined $filter;

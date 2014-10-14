@@ -21,20 +21,34 @@ package nll2rdf.utils
 import scala.collection.mutable.{Map => MMap}
 
 class QueriesSet(val size: Int) {
-  val queries: MMap[String, (Double, Int)] = MMap()
+  val queries: MMap[String, Double] = MMap()
+  val candidates: MMap[String, Int] = MMap()
 
-  private def max: Double = queries.maxBy(_._2._1)._2._1
+  private def maxValue: Double = queries.values.max
 
-  private def maxQuery: String = queries.maxBy(_._2._1)._1
+  private def getMaxQuery: String = {
+    val possibles: List[String] = queries.filter(_._2 == maxValue).map(_._1).toList
 
-  private def checkFit(value: Double, candidates: Int): Boolean =
-    if (queries.size < size) true else value < max || (value == max && candidates < queries(maxQuery)._2)
+    candidates.filter(x => possibles.contains(x._1)).maxBy(_._2)._1
+  }
 
-  def addValue(instanceid: String, value: Double, candidates: Int) {
-    if (checkFit(value, candidates))
-      queries += (instanceid -> (value, candidates))
+  private def checkFit(value: Double, candidatesNumber: Int): Boolean = {
+    if (queries.size < size)
+      true
+    else
+      value < maxValue || (value == maxValue && candidatesNumber < candidates(getMaxQuery))
+  }
 
-    if(queries.size > size)
-      queries -= maxQuery
+  def addValue(instanceid: String, value: Double, candidatesNumber: Int) {
+    if (checkFit(value, candidatesNumber)) {
+      if (queries.size + 1 > size) {
+        val maxQuery: String = getMaxQuery
+        queries -= maxQuery
+        candidates -= maxQuery
+      }
+
+      queries += instanceid -> value
+      candidates += instanceid -> candidatesNumber
+    }
   }
 }

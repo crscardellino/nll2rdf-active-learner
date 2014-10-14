@@ -33,7 +33,11 @@ while(readdir $dh) {
   my $instance = $1;
   my $class = $2;
 
-  my @data = split ",", `grep "$instance\$" $datafile`;
+  die "$instance $class" if $class !~ m/^[A-Z\-]+$/; 
+
+  my $data = `grep ",$instance\$" $datafile`;
+  chomp $data;
+  my @data = split ",", $data;
 
   die $! if ($? >> 8) != 0;
 

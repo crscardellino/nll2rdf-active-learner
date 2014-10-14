@@ -85,7 +85,8 @@ object UnannotatedClassifier extends Classifier {
       new File(s"${config.outputdir.getCanonicalPath}/data/queries.txt")
     )
 
-    for((instanceid, (value, candidates)) <- queries.queries) attrdata.write(f"$instanceid,$value%.2f,$candidates%d\n")
+    for((instanceid, value) <- queries.queries)
+      attrdata.write(f"$instanceid,$value%.2f,${queries.candidates(instanceid)}%d\n")
 
     attrdata.close()
   }
