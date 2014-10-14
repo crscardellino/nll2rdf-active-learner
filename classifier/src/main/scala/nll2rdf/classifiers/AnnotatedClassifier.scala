@@ -74,7 +74,7 @@ object AnnotatedClassifier extends Classifier {
       learner.buildClassifier(datafile)
 
       val eval: Evaluation = new Evaluation(datafile)
-      eval.crossValidateModel(learner, datafile, 10, new Random(1))
+      eval.crossValidateModel(learner, datafile, 10, new Random(0))
 
       val results: PrintWriter = new PrintWriter(
         new File(s"${config.outputdir.getCanonicalPath}/results/evaluation.$classname.txt")
@@ -87,14 +87,16 @@ object AnnotatedClassifier extends Classifier {
 
       results.close()
 
-      kappaStats.addValue(eval.kappa)
-      precisionStats.addValue(eval.precision(1))
-      recallStats.addValue(eval.recall(1))
-      fmeasureStats.addValue(eval.fMeasure(1))
-      weigths += datafile.attributeStats(datafile.classIndex()).nominalCounts(1).toDouble
+      if(classname != "no-class") {
+        kappaStats.addValue(eval.kappa)
+        precisionStats.addValue(eval.precision(1))
+        recallStats.addValue(eval.recall(1))
+        fmeasureStats.addValue(eval.fMeasure(1))
+        weigths += datafile.attributeStats(datafile.classIndex()).nominalCounts(1).toDouble
 
-      generalresults.write(f"${eval.kappa}%.2f\t${eval.precision(1)}%.2f\t" +
-        f"${eval.recall(1)}%.2f\t${eval.fMeasure(1)}%.2f\t${classname.toUpperCase}\n")
+        generalresults.write(f"${eval.kappa}%.2f\t${eval.precision(1)}%.2f\t" +
+            f"${eval.recall(1)}%.2f\t${eval.fMeasure(1)}%.2f\t${classname.toUpperCase}\n")
+      }
 
       weka.core.SerializationHelper.write(
         s"${config.outputdir.getCanonicalPath}/models/$classname.model",
