@@ -64,6 +64,7 @@ while(readdir $dh) {
   $filename =~ s/\.conll//;
 
   my $instance_number = 0;
+  my $itemword;
 
   while(<$fh>){
     chomp;
@@ -75,7 +76,7 @@ while(readdir $dh) {
     $newinstance = ($newinstance or $line[1] =~ m/[;:]/);
     my $isitem = 0;
 
-    if (defined $line[1] and defined($lastword) and ($lastword =~ m/^[a-z](i*|[xv]?)$/)) {
+    if (defined $line[1] and defined($itemword) and ($itemword =~ m/^[a-z](i*|[xv]?)$/)) {
       $isitem = (lc($line[1]) eq '-rrb-');
     }
 
@@ -88,9 +89,9 @@ while(readdir $dh) {
       my %hinttrigrams = map { $_ => 1 } grep { exists $relevantfeatures{$_} } @trigrams;
       
       if (scalar(keys %hintunigrams) > 0 or scalar(keys %hintbigrams) > 0 or scalar(keys %hinttrigrams) > 0) {
-        print join ",", @unigrams;
-        print join ",", @bigrams;
-        print join ",", @trigrams;
+        print join(",", @unigrams) . ",";
+        print join(",", @bigrams) . ",";
+        print join(",", @trigrams);
 
         # Print uniskipbigram (if any)
         for my $i (0 .. (scalar(@unigrams) - 3)) {
@@ -109,9 +110,9 @@ while(readdir $dh) {
 
         print ",$filename-$instance_number\n";
 
-        if ($isitem) { # We remove the item word (e.g. the roman number)
-          pop @instance;
-          pop @instance if $instance[scalar(@instance) - 1] eq '-lrb-';
+        if ($isitem) {
+          pop @instance if(scalar(@instance) > 1); # Remove the item word
+          pop @instance if(scalar(@instance) > 1) and $instance[$#instance] eq '-lrb-';
         }
 
         open(my $ih, ">", "$instances/$filename-$instance_number.txt") or die "Couldn't open instance file for writing: $!";
@@ -121,6 +122,7 @@ while(readdir $dh) {
         $inst =~ s/\s\-rrb\-/\)/g;
         $inst =~ s/\`\`\s/\"/g;
         $inst =~ s/\s\'\'/\"/g;
+        $inst =~ s/\s\'s/\'s/g;
         $inst =~ s/([:;])\s/$1\n/g;
 
         $instance_number++;
@@ -145,12 +147,14 @@ while(readdir $dh) {
     push @instance, $word; # Useful for Active Learning with the oracle
 
     $word =~ s/'s/s/g;
-    $word =~ s/''//g;
-    $word =~ s/[:;,\.\"]//g;
+    $word =~ s/^[0-9]+\.[0-9]*$/<NUMBER>/g;
+    $word =~ s/^[0-9]+$/<NUMBER>/g;
+    $word =~ s/''/<SYM>/g;
+    $word =~ s/``/<SYM>/g;
+    $word =~ s/["':;,\.#$%&*_`]/<SYM>/g;
 
-    unless($word =~ m/^[a-zA-Z][a-zA-Z_\-]*$/) {
-      $beforelastword = $lastword;
-      $lastword = $word;
+    unless($word =~ m/^[a-z\<][a-zA-Z\-\>]*$/) {
+      $itemword = $word;
       next;
     }
 
@@ -174,6 +178,7 @@ while(readdir $dh) {
 
     $beforelastword = $lastword;
     $lastword = $word;
+    $itemword = $word;
   }
   
   close $fh;

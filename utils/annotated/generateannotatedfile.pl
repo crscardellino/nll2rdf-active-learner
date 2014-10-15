@@ -24,7 +24,7 @@ my $tagdir = shift @ARGV;
 die "You have to provide a valid directory of the tagged corpus" unless defined $tagdir;
 
 my $outputdir = shift @ARGV;
-$outputdir = "/tmp/" unless defined $outputdir;
+die unless defined $outputdir;
 
 my $filter = shift @ARGV;
 $filter = 0 unless defined $filter;
@@ -41,7 +41,7 @@ if (defined $olddir) {
   $rc = system "cp $olddir/data/annotated.nll2rdf.data $outputdir/data/annotated.nll2rdf.data";
   die "$!" if ($rc >> 8) != 0;
   
-  $rc = system "perl $directory/getmanualdata.pl $olddir/features $outputdir/instances/tagged >> $outputdir/data/annotated.nll2rdf.data";
+  $rc = system "perl $directory/getmanualdata.pl $outputdir/data/unannotated.nll2rdf.data $outputdir/instances/tagged >> $outputdir/data/annotated.nll2rdf.data";
   die "Error in processing the manually tagged instances: $!" if ($rc >> 8) != 0;
 } else {
   $rc = system "find $tagdir -type f -name \"*.conll\" -print0 | xargs -0 cat | perl $directory/getdata.pl > $outputdir/data/annotated.nll2rdf.data";

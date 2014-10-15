@@ -32,8 +32,6 @@ my @classes = split ",", (split /\s+/, pop @attributes)[2];
 $classes[0] =~ s/{//;
 $classes[scalar(@classes)-1] =~ s/}//;
 
-@classes = grep { lc($_) ne "no-class" } @classes;
-
 my @files = ();
 
 foreach my $class(@classes) {

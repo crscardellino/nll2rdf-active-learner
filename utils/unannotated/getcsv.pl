@@ -18,7 +18,7 @@
 
 use strict;
 use warnings;
-use List::Util qw/ sum /;
+use List::Util qw/ sum shuffle /;
 use POSIX qw/ floor /;
 use String::Util qw/ trim /;
 
@@ -74,7 +74,10 @@ close $fh;
 # Filter the attributes (we ignore the attributes less than the filter)
 my %filtered_attributes = map { $_ => 1 } (grep { $totalattrs{$_} > $filter } @attributes);
 
-open($fh , "<", $datafile) or die "Couldn't open file $datafile: $!";
+my $rc = system "perl -MList::Util -e 'print List::Util::shuffle <>' $datafile > /tmp/shuffle.csv";
+die $! if ($rc >> 8) != 0;
+
+open($fh , "<", "/tmp/shuffle.csv") or die "Couldn't open file $datafile: $!";
 
 while(<$fh>) {
   $currentexamples += 1;
