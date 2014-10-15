@@ -68,7 +68,7 @@ sub print_results {
     while(<$fh>) {
       chomp;
 
-      if($lineno <= 3 or ($lineno >= 17 and $lineno <= 19)) {
+      if($lineno <= 3 or ($lineno >= 18 and $lineno <= 20)) {
         print $_ . "\n";
       } else {
         my $oldstring = `sed -n $lineno,${lineno}p $oldfile`;
