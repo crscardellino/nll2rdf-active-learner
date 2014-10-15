@@ -20,14 +20,17 @@ package nll2rdf.classifiers
 
 import java.io.{File, PrintWriter}
 import java.util.Random
-import nll2rdf.utils.SimpleLogisticRegression
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics
 import org.apache.commons.math3.stat.descriptive.moment.Mean
 import scala.collection.JavaConversions._
 import scala.collection.mutable.ArrayBuffer
+import weka.attributeSelection.{BestFirst, CfsSubsetEval}
 import weka.classifiers.Evaluation
+import weka.classifiers.functions.Logistic
 import weka.core.Instances
 import weka.core.converters.ConverterUtils.DataSource
+import weka.filters.Filter
+import weka.filters.supervised.attribute.AttributeSelection
 
 case class AnnotatedClassifierOptions(arff_files: File = new File("."), outputdir: File = new File("."))
 
@@ -64,17 +67,29 @@ object AnnotatedClassifier extends Classifier {
     generalresults.write("===============\n")
     generalresults.write("KAPPA\tPREC\tRECALL\tF-SCORE\tCLASS\n")
 
-    for ((file, idx) <- config.arff_files.listFiles().zipWithIndex) {
+    for ((file, idx) <- config.arff_files.listFiles().sortBy(_.getName).zipWithIndex) {
       val classname: String = file.getName.split('.')(0).toLowerCase
 
       val datafile: Instances = DataSource.read(file.getCanonicalPath)
       datafile.setClassIndex(datafile.numAttributes - 1)
 
-      val learner: SimpleLogisticRegression = new SimpleLogisticRegression()
-      learner.buildClassifier(datafile)
+      val selection: AttributeSelection = new AttributeSelection()
+      val selectionEval: CfsSubsetEval = new CfsSubsetEval()
+      val selectionSearch: BestFirst = new BestFirst()
 
-      val eval: Evaluation = new Evaluation(datafile)
-      eval.crossValidateModel(learner, datafile, 10, new Random(0))
+      selectionEval.setOptions("-P 1 -E 1".split(" "))
+      selectionSearch.setOptions("-D 1 -E 1".split(" "))
+      selection.setEvaluator(selectionEval)
+      selection.setSearch(selectionSearch)
+
+      selection.setInputFormat(datafile)
+      val filteredData: Instances = Filter.useFilter(datafile, selection)
+
+      val learner: Logistic = new Logistic()
+      learner.buildClassifier(filteredData)
+
+      val eval: Evaluation = new Evaluation(filteredData)
+      eval.crossValidateModel(learner, filteredData, 10, new Random(0))
 
       val results: PrintWriter = new PrintWriter(
         new File(s"${config.outputdir.getCanonicalPath}/results/evaluation.$classname.txt")
@@ -103,13 +118,18 @@ object AnnotatedClassifier extends Classifier {
         learner
       )
 
+      weka.core.SerializationHelper.write(
+        s"${config.outputdir.getCanonicalPath}/models/$classname.filter",
+        selection
+      )
+
       /* We search for every selected attribute */
 
       val attrdata: PrintWriter = new PrintWriter(
         new File(s"${config.outputdir.getCanonicalPath}/features/features.$classname.txt")
       )
 
-      for(attr <- learner.getUsedAttributes(1)) attrdata.write(s"${datafile.attribute(attr).name}\n")
+      for(attr <- filteredData.enumerateAttributes) attrdata.write(s"${attr.name}\n")
 
       attrdata.close()
 
