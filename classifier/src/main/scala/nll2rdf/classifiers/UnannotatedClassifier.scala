@@ -19,11 +19,13 @@
 package nll2rdf.classifiers
 
 import java.io.{PrintWriter, File}
-import nll2rdf.utils.{QueriesSet, SimpleLogisticRegression}
+import nll2rdf.utils.QueriesSet
 import scala.collection.JavaConversions._
 import scala.io.Source
-import weka.core.{DenseInstance, Instances}
+import weka.classifiers.functions.Logistic
+import weka.core.{DenseInstance, Instances, Instance}
 import weka.core.converters.ConverterUtils.DataSource
+import weka.filters.supervised.attribute.AttributeSelection
 
 case class UnannotatedClassifierOptions(csv_file: File = new File("."), models_dir: File = new File("."),
                                         outputdir: File = new File("."), old_arff: File = new File("."),
@@ -52,10 +54,15 @@ object UnannotatedClassifier extends Classifier {
     val dataset: Instances = DataSource.read(config.old_arff.getCanonicalPath)
     dataset.setClassIndex(dataset.numAttributes - 1)
 
-    val models: Array[SimpleLogisticRegression] =
-      for (file <- config.models_dir.listFiles if file.getName.endsWith(".model")) yield {
-        weka.core.SerializationHelper.read(file.getAbsolutePath).asInstanceOf[SimpleLogisticRegression]
-      }
+    val models: Map[String, Logistic] =
+      (for (file <- config.models_dir.listFiles if file.getName.endsWith(".model")) yield {
+        (file.getName.split('.')(0), weka.core.SerializationHelper.read(file.getAbsolutePath).asInstanceOf[Logistic])
+      }).toMap
+
+    val filters: Map[String, AttributeSelection] =
+      (for (file <- config.models_dir.listFiles if file.getName.endsWith(".filter")) yield {
+        (file.getName.split('.')(0), weka.core.SerializationHelper.read(file.getAbsolutePath).asInstanceOf[AttributeSelection])
+      }).toMap
 
     val queries: QueriesSet = new QueriesSet(config.queries_size)
 
@@ -72,11 +79,15 @@ object UnannotatedClassifier extends Classifier {
 
       for((v, i) <- instance_data(1).split(",").zipWithIndex) instance.setValue(i, v.toDouble)
 
-      val classification: Array[Double] = for(learner <- models) yield learner.distributionForInstance(instance)(1)
-      val max: Double = classification.max
-      val candidates: Int = classification.filter(_ == max).length
+      val classification: Array[Double] = (for((model, learner) <- models) yield {
+        filters(model).input(instance)
+        val filteredInstance: Instance = filters(model).output
 
-      queries.addValue(instance_data(0), max, candidates)
+        Math.abs(learner.distributionForInstance(filteredInstance)(1) - 0.5)
+      }).toArray
+      val min: Double = classification.min
+
+      queries.addValue(instance_data(0), min)
     }
 
     Console.err.println()
@@ -86,7 +97,7 @@ object UnannotatedClassifier extends Classifier {
     )
 
     for((instanceid, value) <- queries.queries)
-      attrdata.write(f"$instanceid,$value%.2f,${queries.candidates(instanceid)}%d\n")
+      attrdata.write(f"$instanceid,$value%.2f\n")
 
     attrdata.close()
   }

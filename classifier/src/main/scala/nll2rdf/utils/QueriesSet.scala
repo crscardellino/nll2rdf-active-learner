@@ -22,33 +22,20 @@ import scala.collection.mutable.{Map => MMap}
 
 class QueriesSet(val size: Int) {
   val queries: MMap[String, Double] = MMap()
-  val candidates: MMap[String, Int] = MMap()
 
-  private def maxValue: Double = queries.values.max
+  private def max: Double = queries.maxBy(_._2)._2
 
-  private def getMaxQuery: String = {
-    val possibles: List[String] = queries.filter(_._2 == maxValue).map(_._1).toList
+  private def maxQuery: String = queries.maxBy(_._2)._1
 
-    candidates.filter(x => possibles.contains(x._1)).maxBy(_._2)._1
-  }
+  private def checkFit(value: Double): Boolean =
+    queries.size < size || value < max
 
-  private def checkFit(value: Double, candidatesNumber: Int): Boolean = {
-    if (queries.size < size)
-      true
-    else
-      value < maxValue || (value == maxValue && candidatesNumber < candidates(getMaxQuery))
-  }
-
-  def addValue(instanceid: String, value: Double, candidatesNumber: Int) {
-    if (checkFit(value, candidatesNumber)) {
-      if (queries.size + 1 > size) {
-        val maxQuery: String = getMaxQuery
+  def addValue(instanceid: String, value: Double) {
+    if (checkFit(value)) {
+      if (queries.size + 1 > size)
         queries -= maxQuery
-        candidates -= maxQuery
-      }
 
       queries += instanceid -> value
-      candidates += instanceid -> candidatesNumber
     }
   }
 }
