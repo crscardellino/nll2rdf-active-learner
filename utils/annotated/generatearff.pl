@@ -51,6 +51,8 @@ while(<$fh>) {
   $classes{$class} = 1;
 }
 
+$classes{"NO-CLASS"} = 1 if !defined $classes{"NO-CLASS"}; # Add "NO-CLASS"
+
 @words = grep { $totalwords{$_} > $filter } @words;
 
 foreach my $word (@words) {
