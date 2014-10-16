@@ -22,7 +22,7 @@ import java.io.{PrintWriter, File}
 import nll2rdf.utils.QueriesSet
 import scala.collection.JavaConversions._
 import scala.io.Source
-import weka.classifiers.functions.Logistic
+import weka.classifiers.functions.LibSVM
 import weka.core.{DenseInstance, Instances, Instance}
 import weka.core.converters.ConverterUtils.DataSource
 import weka.filters.supervised.attribute.AttributeSelection
@@ -54,9 +54,9 @@ object UnannotatedClassifier extends Classifier {
     val dataset: Instances = DataSource.read(config.old_arff.getCanonicalPath)
     dataset.setClassIndex(dataset.numAttributes - 1)
 
-    val models: Map[String, Logistic] =
+    val models: Map[String, LibSVM] =
       (for (file <- config.models_dir.listFiles if file.getName.endsWith(".model")) yield {
-        (file.getName.split('.')(0), weka.core.SerializationHelper.read(file.getAbsolutePath).asInstanceOf[Logistic])
+        (file.getName.split('.')(0), weka.core.SerializationHelper.read(file.getAbsolutePath).asInstanceOf[LibSVM])
       }).toMap
 
     val filters: Map[String, AttributeSelection] =
@@ -80,11 +80,12 @@ object UnannotatedClassifier extends Classifier {
       for((v, i) <- instance_data(1).split(",").zipWithIndex) instance.setValue(i, v.toDouble)
 
       val classification: Array[Double] = (for((model, learner) <- models) yield {
-        filters(model).input(instance)
-        val filteredInstance: Instance = filters(model).output
+//        filters(model).input(instance)
+//        val filteredInstance: Instance = filters(model).output
 
-        Math.abs(learner.distributionForInstance(filteredInstance)(1) - 0.5)
+        Math.abs(learner.distributionForInstance(instance)(1) - 0.5)
       }).toArray
+//      val uncertainty: Double = classification.sum / classification.length
       val min: Double = classification.min
 
       queries.addValue(instance_data(0), min)
