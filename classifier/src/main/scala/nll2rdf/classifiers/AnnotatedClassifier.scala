@@ -72,7 +72,6 @@ object AnnotatedClassifier extends Classifier {
     System.setOut(nullOutput)
 
     val learner: SimpleLogistic = new SimpleLogistic()
-    learner.setOptions("-K 0 -B".split(' '))
     learner.buildClassifier(multiclassInstances)
 
     val eval: Evaluation = new Evaluation(multiclassInstances)
