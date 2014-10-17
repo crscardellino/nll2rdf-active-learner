@@ -39,7 +39,7 @@ sub print_color {
   my @oldstring = split /\s+/, shift;
   my @newstring = split /\s+/, shift;
 
-  foreach my $i (0 .. 3) {
+  foreach my $i (0 .. 2) {
     print color("red") if $newstring[$i] < $oldstring[$i];
     print color("green") if $newstring[$i] > $oldstring[$i];
     print color("blue") if $newstring[$i] == $oldstring[$i];
@@ -48,8 +48,8 @@ sub print_color {
     print "\t";
   }
 
-  print $newstring[4];
-  print " " . $newstring[5] if scalar(@newstring) == 6;
+  print $newstring[3];
+  print " " . $newstring[4] if scalar(@newstring) == 5;
   print "\n";
 }
 
@@ -68,8 +68,20 @@ sub print_results {
     while(<$fh>) {
       chomp;
 
-      if($lineno <= 3 or ($lineno >= 18 and $lineno <= 20)) {
+      if($lineno <= 3 or ($lineno >= 18 and $lineno <= 21)) {
         print $_ . "\n";
+      } elsif($lineno == 26 or $lineno == 27) {
+        my $oldvalue = `sed -n $lineno,${lineno}p $oldfile | awk '{ print \$2 }'`;
+        chomp $oldvalue;
+        my @newstring = split /\s+/, $_;
+
+        print $newstring[0] . " ";
+        print color("red") if $newstring[1] < $oldvalue;
+        print color("green") if $newstring[1] > $oldvalue;
+        print color("blue") if $newstring[1] == $oldvalue;
+        print $newstring[1];
+        print color("reset");
+        print "\n";
       } else {
         my $oldstring = `sed -n $lineno,${lineno}p $oldfile`;
         chomp $oldstring;
@@ -126,10 +138,10 @@ $rc = system "perl ./utils/annotated/generateannotatedfile.pl $tagdir $outputdir
 die if ($rc >> 8) != 0;
 
 print STDERR "\nAnnotated corpus initial training\n";
-print STDERR "=================================\n\n";
+print STDERR "=================================\n";
 
 $java = "java -Xmx2048m -cp bin/nll2rdf.jar nll2rdf.classifiers.AnnotatedClassifier";
-$args = "-a $outputdir/iteration0/data/binary/ -o $outputdir/iteration0/";
+$args = "-t $outputdir/iteration0/data/annotated.nll2rdf.arff -a $outputdir/iteration0/data/binary/ -o $outputdir/iteration0/";
 
 $rc = system $java . " " . $args;
 die "Error in the training of the initial model: $!" if ($rc >> 8) != 0;
@@ -142,7 +154,7 @@ my $iteration = 1;
 
 while(!$passive) {
   print STDERR "\nActive learning iteration: $iteration\n";
-  print STDERR "=========================\n\n";
+  print STDERR "=========================\n";
 
   my $outdir = "$outputdir/iteration$iteration";
   mkdir "$outdir";
@@ -166,7 +178,7 @@ while(!$passive) {
   chomp $instance_count;
 
   $java = "java -Xmx2048m -cp bin/nll2rdf.jar nll2rdf.classifiers.UnannotatedClassifier";
-  $args = "-c $outdir/data/unannotated.nll2rdf.csv -m $modelsdir/ -o $outdir/ -a $oldarff -i $instance_count -q $query_instances";
+  $args = "-c $outdir/data/unannotated.nll2rdf.csv -m $modelsdir/learner.model -o $outdir/ -a $oldarff -i $instance_count -q $query_instances";
 
   $rc = system $java . " " . $args;
   die "Error in the querying: $!" if ($rc >> 8) != 0;
@@ -182,7 +194,7 @@ while(!$passive) {
   die if ($rc >> 8) != 0;
 
   $java = "java -Xmx2048m -cp bin/nll2rdf.jar nll2rdf.classifiers.AnnotatedClassifier";
-  $args = "-a $outdir/data/binary/ -o $outdir/";
+  $args = "-t $outdir/data/annotated.nll2rdf.arff -a $outdir/data/binary/ -o $outdir/";
 
   $rc = system $java . " " . $args;
   die "Error in the training of the initial model: $!" if ($rc >> 8) != 0;

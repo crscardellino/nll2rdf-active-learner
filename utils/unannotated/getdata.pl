@@ -47,7 +47,6 @@ sub get_progress {
 }
 
 my @features = `grep "^\@ATTRIBUTE" $oldarff | awk '{ print \$2 }'`;
-# my @features = `cat $featuresdir/features.*.txt`;
 chomp @features;
 pop @features; # Remove the class feature
 my %relevantfeatures = map { $_ => 1 } @features;
@@ -91,9 +90,9 @@ while(readdir $dh) {
       my @filtered_trigrams = grep { exists $relevantfeatures{$_} } @trigrams;
       
       if (scalar(@filtered_unigrams) > 0 or scalar(@filtered_bigrams) > 0 or scalar(@filtered_trigrams) > 0) {
-        print join(",", @filtered_unigrams);
-        print "," . join(",", @filtered_bigrams);
-        print "," . join(",", @filtered_trigrams);
+        print join(",", @filtered_unigrams) if scalar(@filtered_unigrams) > 0;
+        print "," . join(",", @filtered_bigrams) if scalar(@filtered_bigrams) > 0;
+        print "," . join(",", @filtered_trigrams) if scalar(@filtered_trigrams) > 0;
 
         # Print uniskipbigram (if any)
         for my $i (0 .. (scalar(@unigrams) - 3)) {
