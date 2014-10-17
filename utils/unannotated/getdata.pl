@@ -146,7 +146,7 @@ while(readdir $dh) {
 
     push @instance, $word; # Useful for Active Learning with the oracle
 
-    $word =~ s/'s/s/g;
+    $word =~ s/'s/<POSS>/g;
     $word =~ s/^[0-9]+\.[0-9]*$/<NUMBER>/g;
     $word =~ s/^[0-9]+$/<NUMBER>/g;
     $word =~ s/''/<SYM>/g;
