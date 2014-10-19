@@ -27,7 +27,7 @@ import scala.collection.JavaConversions._
 import scala.collection.mutable.ArrayBuffer
 import weka.attributeSelection.{BestFirst, CfsSubsetEval}
 import weka.classifiers.Evaluation
-import weka.classifiers.functions.SimpleLogistic
+import weka.classifiers.functions.LibSVM
 import weka.core.Instances
 import weka.core.converters.ConverterUtils.DataSource
 import weka.filters.Filter
@@ -71,7 +71,8 @@ object AnnotatedClassifier extends Classifier {
     val out: PrintStream = System.out
     System.setOut(nullOutput)
 
-    val learner: SimpleLogistic = new SimpleLogistic()
+    val learner: LibSVM = new LibSVM()
+    learner.setOptions("-K 0 -B".split(' '))
     learner.buildClassifier(multiclassInstances)
 
     val eval: Evaluation = new Evaluation(multiclassInstances)

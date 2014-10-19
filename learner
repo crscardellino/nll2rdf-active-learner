@@ -146,6 +146,10 @@ $args = "-t $outputdir/iteration0/data/annotated.nll2rdf.arff -a $outputdir/iter
 $rc = system $java . " " . $args;
 die "Error in the training of the initial model: $!" if ($rc >> 8) != 0;
 
+# Filtering attributes
+$rc = system "perl ./utils/activelearning/filtering.pl $outputdir/iteration0/features";
+die "Error in filtering attributes: $!" if ($rc >> 8) != 0;
+
 print_results 0, "$outputdir/iteration0/results/generalresults.txt", undef;
 
 print "\n";
@@ -172,7 +176,7 @@ while(!$passive) {
   my $oldarff = "$olddir/data/annotated.nll2rdf.arff";
 
   $rc = system "perl ./utils/unannotated/generateunannotatedfile.pl $untagdir $featuresdir $oldarff $outdir $untagfilter";
-  die if ($rc >> 8) != 0;
+  die $! if ($rc >> 8) != 0;
 
   my $instance_count = `wc -l $outdir/data/unannotated.nll2rdf.csv | awk '{ print \$1 }'`;
   chomp $instance_count;
@@ -197,7 +201,10 @@ while(!$passive) {
   $args = "-t $outdir/data/annotated.nll2rdf.arff -a $outdir/data/binary/ -o $outdir/";
 
   $rc = system $java . " " . $args;
-  die "Error in the training of the initial model: $!" if ($rc >> 8) != 0;
+  die "Error in the training of the ${iteration}th model: $!" if ($rc >> 8) != 0;
+
+  $rc = system "perl ./utils/activelearning/filtering.pl $outdir/features";
+  die "Error in filtering attributes: $!" if ($rc >> 8) != 0;
 
   print_results $iteration, "$outdir/results/generalresults.txt", "$olddir/results/generalresults.txt";
 
@@ -208,52 +215,55 @@ while(!$passive) {
   $iteration++;
 }
 
-while($passive) {
-  print STDERR "\nPassive learning iteration: $iteration\n";
-  print STDERR "==========================\n\n";
-
-  my $outdir = "$outputdir/iteration$iteration";
-  mkdir "$outdir";
-  mkdir "$outdir/data";
-  mkdir "$outdir/data/binary";
-  mkdir "$outdir/instances";
-  mkdir "$outdir/instances/tagged";
-  mkdir "$outdir/models";
-  mkdir "$outdir/features";
-  mkdir "$outdir/results";
-
-  my $olddir = sprintf("$outputdir/iteration%d", $iteration - 1);
-  my $featuresdir = "$olddir/features";
-  my $modelsdir = "$olddir/models";
-  my $oldarff = "$olddir/data/annotated.nll2rdf.arff";
-
-  $rc = system "perl ./utils/unannotated/generateunannotatedfile.pl $untagdir $featuresdir $oldarff $outdir $untagfilter";
-  die "$!" if ($rc >> 8) != 0;
-
-  $rc = system "perl ./utils/activelearning/randomqueries.pl $outdir/data/queries.txt $outdir/data/unannotated.nll2rdf.csv $query_instances";
-  die "$!" if ($rc >> 8) != 0;
-
-  print STDERR "\nQueries Annotation\n";
-
-  $rc = system "perl ./utils/activelearning/makequeries.pl $outdir/data/queries.txt $outdir/instances";
-  die "Error in query annotation: $!" if ($rc >> 8) != 0;
-
-  print STDERR "\nClassifier retrain\n";
-
-  my $rc = system "perl ./utils/annotated/generateannotatedfile.pl $tagdir $outdir $tagfilter $olddir";
-  die if ($rc >> 8) != 0;
-
-  $java = "java -Xmx2048m -cp bin/nll2rdf.jar nll2rdf.classifiers.AnnotatedClassifier";
-  $args = "-a $outdir/data/binary/ -o $outdir/";
-
-  $rc = system $java . " " . $args;
-  die "Error in the training of the initial model: $!" if ($rc >> 8) != 0;
-
-  print_results $iteration, "$outdir/results/generalresults.txt", "$olddir/results/generalresults.txt";
-
-  print "New passive learning iteration? [y/N]: ";
-  my $ans = <STDIN>;
-
-  last unless $ans =~ m/^[yY]/;
-  $iteration++;
-}
+# while($passive) {
+#   print STDERR "\nPassive learning iteration: $iteration\n";
+#   print STDERR "==========================\n\n";
+#
+#   my $outdir = "$outputdir/iteration$iteration";
+#   mkdir "$outdir";
+#   mkdir "$outdir/data";
+#   mkdir "$outdir/data/binary";
+#   mkdir "$outdir/instances";
+#   mkdir "$outdir/instances/tagged";
+#   mkdir "$outdir/models";
+#   mkdir "$outdir/features";
+#   mkdir "$outdir/results";
+#
+#   my $olddir = sprintf("$outputdir/iteration%d", $iteration - 1);
+#   my $featuresdir = "$olddir/features";
+#   my $modelsdir = "$olddir/models";
+#   my $oldarff = "$olddir/data/annotated.nll2rdf.arff";
+#
+#   $rc = system "perl ./utils/unannotated/generateunannotatedfile.pl $untagdir $featuresdir $oldarff $outdir $untagfilter";
+#   die "$!" if ($rc >> 8) != 0;
+#
+#   $rc = system "perl ./utils/activelearning/randomqueries.pl $outdir/data/queries.txt $outdir/data/unannotated.nll2rdf.csv $query_instances";
+#   die "$!" if ($rc >> 8) != 0;
+#
+#   print STDERR "\nQueries Annotation\n";
+#
+#   $rc = system "perl ./utils/activelearning/makequeries.pl $outdir/data/queries.txt $outdir/instances";
+#   die "Error in query annotation: $!" if ($rc >> 8) != 0;
+#
+#   print STDERR "\nClassifier retrain\n";
+#
+#   my $rc = system "perl ./utils/annotated/generateannotatedfile.pl $tagdir $outdir $tagfilter $olddir";
+#   die if ($rc >> 8) != 0;
+#
+#   $java = "java -Xmx2048m -cp bin/nll2rdf.jar nll2rdf.classifiers.AnnotatedClassifier";
+#   $args = "-a $outdir/data/binary/ -o $outdir/";
+#
+#   $rc = system $java . " " . $args;
+#   die "Error in the training of the initial model: $!" if ($rc >> 8) != 0;
+#
+#   $rc = system "perl ./utils/activelearning/filtering.pl $outdir/features";
+#   die "Error in filtering attributes: $!" if ($rc >> 8) != 0;
+#
+#   print_results $iteration, "$outdir/results/generalresults.txt", "$olddir/results/generalresults.txt";
+#
+#   print "New passive learning iteration? [y/N]: ";
+#   my $ans = <STDIN>;
+#
+#   last unless $ans =~ m/^[yY]/;
+#   $iteration++;
+# }

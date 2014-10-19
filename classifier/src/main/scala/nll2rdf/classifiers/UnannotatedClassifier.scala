@@ -22,10 +22,9 @@ import java.io.{PrintWriter, File}
 import nll2rdf.utils.QueriesSet
 import scala.collection.JavaConversions._
 import scala.io.Source
-import weka.classifiers.functions.SimpleLogistic
+import weka.classifiers.functions.LibSVM
 import weka.core.{DenseInstance, Instances}
 import weka.core.converters.ConverterUtils.DataSource
-import weka.filters.supervised.attribute.AttributeSelection
 
 case class UnannotatedClassifierOptions(csv_file: File = new File("."), model: File = new File("."),
                                         outputdir: File = new File("."), old_arff: File = new File("."),
@@ -35,10 +34,10 @@ object UnannotatedClassifier extends Classifier {
   def main(args: Array[String]) {
     val parser = new scopt.OptionParser[UnannotatedClassifierOptions]("NLL2RDF") {
       head("NLL2RDF Unannotated Classifier", "2.0")
-      opt[File]('c', "csv-file") required() action { (a, c) => c.copy(csv_file = a) }
+      opt[File]('c', "csv-file") required() action { (csv, c) => c.copy(csv_file = csv) }
       opt[File]('m', "model") required() action { (m, c) => c.copy(model = m) }
       opt[File]('o', "outputdir") required() action { (o, c) => c.copy(outputdir = o) }
-      opt[File]('a', "old-arff") required() action { (f, c) => c.copy(old_arff = f) }
+      opt[File]('a', "old-arff") required() action { (a, c) => c.copy(old_arff = a) }
       opt[Double]('i', "instance-count") action { (i, c) => c.copy(instance_count = i)}
       opt[Int]('q', "queries-size") action { (q, c) => c.copy(queries_size = q)}
     }
@@ -54,7 +53,7 @@ object UnannotatedClassifier extends Classifier {
     val dataset: Instances = DataSource.read(config.old_arff.getCanonicalPath)
     dataset.setClassIndex(dataset.numAttributes - 1)
 
-    val learner: SimpleLogistic = weka.core.SerializationHelper.read(config.model.getCanonicalPath).asInstanceOf[SimpleLogistic]
+    val learner: LibSVM = weka.core.SerializationHelper.read(config.model.getCanonicalPath).asInstanceOf[LibSVM]
     val queries: QueriesSet = new QueriesSet(config.queries_size)
 
     print_progress(0, config.instance_count)
@@ -66,11 +65,11 @@ object UnannotatedClassifier extends Classifier {
       val instance: DenseInstance = new DenseInstance(dataset.numAttributes)
       instance.setDataset(dataset)
 
-      for((v, i) <- instance_data(1).split(",").zipWithIndex) instance.setValue(i, v.toDouble)
+      for ((v, i) <- instance_data(1).split(",").zipWithIndex) {
+        instance.setValue(i, v.toDouble)
+      }
 
-      val max: Double = learner.distributionForInstance(instance).max
-
-      queries.addValue(instance_data(0), max)
+      queries.addValue(instance_data(0), learner.distributionForInstance(instance).max)
       print_progress(current, config.instance_count)
       current += 1
     }

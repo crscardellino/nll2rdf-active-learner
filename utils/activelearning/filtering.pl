@@ -19,36 +19,28 @@
 use strict;
 use warnings;
 
-my $datafile = shift @ARGV;
-my $instancesdir = shift @ARGV;
 my $featuresdir = shift @ARGV;
 
-open(my $fh, $datafile) or die $!;
-close $fh;
-opendir(my $dh, $featuresdir) or die $!;
-closedir $dh;
-opendir($dh, $instancesdir) or die $!;
+print STDERR "Analyzing features\n";
 
-print STDERR "Adding manually annotated data to the corpus\n";
+opendir(my $dh, $featuresdir) or die $!;
 
 while(readdir $dh) {
-  next unless $_ =~ m/^([^A-Z]+)\.([A-Z\-]+)\.txt$/;
-  my $instance = $1;
-  my $class = $2;
+  next unless $_ =~ m/^features\.([A-Z\-]+)\.txt$/;
+  my $class = $1;
 
-  my $data = `grep ",$instance\$" $datafile`;
-  chomp $data;
-  my @data = split ",", $data;
-  pop @data;
+  my @classfeatures = `cat $featuresdir/features.$class.txt`;
+  chomp @classfeatures;
+  my %classfeatures = map { $_ => 1 } @classfeatures;
+  my @nonclassfeatures = `find $featuresdir -name "features.*.txt" -not -name "features.$class.txt" -print0 | xargs -0 cat`;
+  chomp @nonclassfeatures;
+  my %nonclassfeatures = map { $_ => 1 } (grep { !exists $classfeatures{$_} } @nonclassfeatures);
 
-  # Preprocess of the instance to make it monolabel
-  my $featuresfilter = `cat $featuresdir/$class.filter`;
-  chomp $featuresfilter;
-  my %featuresfilter = map { $_ => 1 } (split ",", $featuresfilter);
+  open(my $fh, ">", "$featuresdir/$class.filter") or die $!;
 
-  my @processeddata = grep { !exists $featuresfilter{$_} } @data;
+  print $fh join(",", keys %nonclassfeatures);
 
-  print join(",", @processeddata) . ",$class\n";
+  close $fh;
 }
 
 closedir $dh;
