@@ -18,6 +18,7 @@
 
 package nll2rdf.utils
 
+import scala.collection.JavaConversions._
 import weka.classifiers.AbstractClassifier
 import weka.classifiers.bayes.NaiveBayesMultinomial
 import weka.core.{Instance, Instances}
@@ -37,7 +38,9 @@ class NaiveBayesInfoGain extends AbstractClassifier {
     val classFilters: Array[MakeIndicator] = new Array(instances.numClasses)
 
     /* Create the filters for binary data */
-    for(i: Int <- 0 until instances.numClasses) {
+    for(classobject <- instances.classAttribute.enumerateValues) {
+      val i: Int = instances.classAttribute.indexOfValue(classobject.asInstanceOf[String])
+
       classFilters(i) = new MakeIndicator()
       classFilters(i).setAttributeIndex((instances.classIndex + 1).toString)
       classFilters(i).setValueIndices((i + 1).toString)
@@ -70,5 +73,19 @@ class NaiveBayesInfoGain extends AbstractClassifier {
 
   override def classifyInstance(instance: Instance): Double = {
     distributionForInstance(instance).zipWithIndex.maxBy(_._1)._2
+  }
+
+  def getAllFilteredAttributesSet(instance: Instance): Set[String] =
+    (for (filter <- filters) yield {
+      filter.input(instance)
+      val filtered: Instance = filter.output()
+
+      for(attribute <- filtered.enumerateAttributes()) yield attribute.name()
+    }).flatMap(x => x).toSet
+
+  def getFilteredAttributesSet(instance: Instance, classvalue: Int): Array[String] = {
+    filters(classvalue).input(instance)
+    val filtered: Instance = filters(classvalue).output()
+    (for(attribute <- filtered.enumerateAttributes()) yield attribute.name()).toArray
   }
 }

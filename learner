@@ -141,7 +141,7 @@ print STDERR "\nAnnotated corpus initial training\n";
 print STDERR "=================================\n";
 
 $java = "java -Xmx2048m -cp bin/nll2rdf.jar nll2rdf.classifiers.AnnotatedClassifier";
-$args = "-t $outputdir/iteration0/data/annotated.nll2rdf.arff -a $outputdir/iteration0/data/binary/ -o $outputdir/iteration0/";
+$args = "-t $outputdir/iteration0/data/annotated.nll2rdf.arff -o $outputdir/iteration0/";
 
 $rc = system $java . " " . $args;
 die "Error in the training of the initial model: $!" if ($rc >> 8) != 0;
@@ -198,7 +198,7 @@ while(!$passive) {
   die if ($rc >> 8) != 0;
 
   $java = "java -Xmx2048m -cp bin/nll2rdf.jar nll2rdf.classifiers.AnnotatedClassifier";
-  $args = "-t $outdir/data/annotated.nll2rdf.arff -a $outdir/data/binary/ -o $outdir/";
+  $args = "-t $outdir/data/annotated.nll2rdf.arff -o $outdir/";
 
   $rc = system $java . " " . $args;
   die "Error in the training of the ${iteration}th model: $!" if ($rc >> 8) != 0;

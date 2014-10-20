@@ -18,34 +18,26 @@
 
 package nll2rdf.classifiers
 
-import java.io.{File, PrintWriter, PrintStream}
+import java.io.{File, PrintWriter}
 import java.util.Random
-import nll2rdf.utils.NullOuputStream
+import nll2rdf.utils.NaiveBayesInfoGain
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics
 import org.apache.commons.math3.stat.descriptive.moment.Mean
 import scala.collection.JavaConversions._
 import scala.collection.mutable.ArrayBuffer
-import weka.attributeSelection.{Ranker, InfoGainAttributeEval}
 import weka.classifiers.Evaluation
-import weka.classifiers.functions.LibSVM
 import weka.core.Instances
 import weka.core.converters.ConverterUtils.DataSource
-import weka.filters.Filter
-import weka.filters.supervised.attribute.AttributeSelection
 
 
 case class AnnotatedClassifierOptions(arff: File = new File("."),
-                                      arff_files: File = new File("."),
                                       outputdir: File = new File("."))
 
 object AnnotatedClassifier extends Classifier {
-  val nullOutput: PrintStream = new PrintStream(new NullOuputStream())
-
   def main(args: Array[String]) {
     val parser = new scopt.OptionParser[AnnotatedClassifierOptions]("NLL2RDF") {
       head("NLL2RDF Annotated Classifier", "2.0")
       opt[File]('t', "arff") required() action  { (t, c) => c.copy(arff = t) }
-      opt[File]('a', "arff_files") required() action { (a, c) => c.copy(arff_files = a) }
       opt[File]('o', "outputdir") required() action { (o, c) => c.copy(outputdir = o) }
     }
 
@@ -56,8 +48,6 @@ object AnnotatedClassifier extends Classifier {
     }
 
     Console.err.println("Training classifier")
-    val total: Double = config.arff_files.list.length.toDouble
-    print_progress(0, total)
 
     val precisionStats: DescriptiveStatistics = new DescriptiveStatistics()
     val recallStats: DescriptiveStatistics = new DescriptiveStatistics()
@@ -65,20 +55,24 @@ object AnnotatedClassifier extends Classifier {
     val weightedmean: Mean = new Mean()
     val weigths: ArrayBuffer[Double] = ArrayBuffer()
 
-    val multiclassInstances: Instances = DataSource.read(config.arff.getCanonicalPath)
-    multiclassInstances.setClassIndex(multiclassInstances.numAttributes - 1)
+    val instances: Instances = DataSource.read(config.arff.getCanonicalPath)
+    instances.setClassIndex(instances.numAttributes - 1)
 
-    val out: PrintStream = System.out
-    System.setOut(nullOutput)
+    val learner: NaiveBayesInfoGain = new NaiveBayesInfoGain()
+    learner.buildClassifier(instances)
 
-    val learner: LibSVM = new LibSVM()
-    learner.setOptions("-K 0 -B".split(' '))
-    learner.buildClassifier(multiclassInstances)
+    val selectedFeatures: PrintWriter = new PrintWriter(
+      new File(s"${config.outputdir.getCanonicalPath}/features/features.txt")
+    )
 
-    val eval: Evaluation = new Evaluation(multiclassInstances)
-    eval.crossValidateModel(learner, multiclassInstances, 10, new Random(0))
+    selectedFeatures.write(learner.getAllFilteredAttributesSet(instances.instance(0)).mkString("\n"))
 
-    System.setOut(out)
+    selectedFeatures.close()
+
+    Console.err.println("Evaluation of classifier")
+
+    val eval: Evaluation = new Evaluation(instances)
+    eval.crossValidateModel(learner, instances, 10, new Random(0))
 
     val results: PrintWriter = new PrintWriter(
       new File(s"${config.outputdir.getCanonicalPath}/results/evaluationresults.txt")
@@ -103,23 +97,11 @@ object AnnotatedClassifier extends Classifier {
     generalresults.write("===============\n")
     generalresults.write("PREC\tRECALL\tF-SCORE\tCLASS\n")
 
-    for ((file, idx) <- config.arff_files.listFiles().sortBy(_.getName).zipWithIndex) {
-      val classname: String = file.getName.split('.')(0)
-      val classindex: Int = multiclassInstances.classAttribute.indexOfValue(classname)
+    Console.err.println("Calculation of statistics")
 
-      val instances: Instances = DataSource.read(file.getCanonicalPath)
-      instances.setClassIndex(instances.numAttributes - 1)
-
-      val selection: AttributeSelection = new AttributeSelection()
-      val selectionEval: InfoGainAttributeEval = new InfoGainAttributeEval()
-      val selectionSearch: Ranker = new Ranker()
-
-      selectionSearch.setOptions("-T 0.001 -N -1".split(" "))
-      selection.setEvaluator(selectionEval)
-      selection.setSearch(selectionSearch)
-      selection.setInputFormat(instances)
-
-      val filteredInstances: Instances = Filter.useFilter(instances, selection)
+    for (classobject <- instances.classAttribute.enumerateValues) {
+      val classname: String = classobject.asInstanceOf[String]
+      val classindex: Int = instances.classAttribute.indexOfValue(classname)
 
       precisionStats.addValue(eval.precision(classindex))
       recallStats.addValue(eval.recall(classindex))
@@ -134,11 +116,9 @@ object AnnotatedClassifier extends Classifier {
         new File(s"${config.outputdir.getCanonicalPath}/features/features.$classname.txt")
       )
 
-      for(feature <- filteredInstances.enumerateAttributes) selectedFeatures.write(s"${feature.name}\n")
+      for(feature <- learner.getFilteredAttributesSet(instances.instance(0), classindex)) selectedFeatures.write(s"$feature\n")
 
       selectedFeatures.close()
-
-      print_progress(idx + 1, total)
     }
 
     generalresults.write("\nGeneral Results Statistics\n")

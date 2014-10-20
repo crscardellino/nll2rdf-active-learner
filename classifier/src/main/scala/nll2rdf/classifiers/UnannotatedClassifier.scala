@@ -19,10 +19,10 @@
 package nll2rdf.classifiers
 
 import java.io.{PrintWriter, File}
+import nll2rdf.utils.NaiveBayesInfoGain
 import nll2rdf.utils.QueriesSet
 import scala.collection.JavaConversions._
 import scala.io.Source
-import weka.classifiers.functions.LibSVM
 import weka.core.{DenseInstance, Instances}
 import weka.core.converters.ConverterUtils.DataSource
 
@@ -53,7 +53,7 @@ object UnannotatedClassifier extends Classifier {
     val dataset: Instances = DataSource.read(config.old_arff.getCanonicalPath)
     dataset.setClassIndex(dataset.numAttributes - 1)
 
-    val learner: LibSVM = weka.core.SerializationHelper.read(config.model.getCanonicalPath).asInstanceOf[LibSVM]
+    val learner: NaiveBayesInfoGain = weka.core.SerializationHelper.read(config.model.getCanonicalPath).asInstanceOf[NaiveBayesInfoGain]
     val queries: QueriesSet = new QueriesSet(config.queries_size)
 
     print_progress(0, config.instance_count)

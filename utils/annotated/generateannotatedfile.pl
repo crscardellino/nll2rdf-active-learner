@@ -54,5 +54,5 @@ die "Error in processing the features: $!" if ($rc >> 8) != 0;
 $rc = system "perl $directory/generatearff.pl $outputdir/data/annotated.nll2rdf.data $filter < $outputdir/data/annotated.nll2rdf.bag > $outputdir/data/annotated.nll2rdf.arff";
 die "Error in creating the arff file: $!" if ($rc >> 8) != 0;
 
-$rc = system "perl $directory/tobinaryclassification.pl $outputdir/data/annotated.nll2rdf.arff $outputdir/data/binary";  
-die "Error in creating the binary files: $!" if ($rc >> 8) != 0;
+# $rc = system "perl $directory/tobinaryclassification.pl $outputdir/data/annotated.nll2rdf.arff $outputdir/data/binary";
+# die "Error in creating the binary files: $!" if ($rc >> 8) != 0;
