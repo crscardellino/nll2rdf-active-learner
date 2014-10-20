@@ -25,7 +25,7 @@ import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics
 import org.apache.commons.math3.stat.descriptive.moment.Mean
 import scala.collection.JavaConversions._
 import scala.collection.mutable.ArrayBuffer
-import weka.attributeSelection.{BestFirst, CfsSubsetEval}
+import weka.attributeSelection.{InfoGainAttributeEval, Ranker}
 import weka.classifiers.Evaluation
 import weka.classifiers.functions.LibSVM
 import weka.core.Instances
@@ -55,16 +55,13 @@ object AnnotatedClassifier extends Classifier {
       System.exit(0)
     }
 
-    Console.err.println("Training classifier")
-    val total: Double = config.arff_files.list.length.toDouble
-    print_progress(0, total)
-
     val precisionStats: DescriptiveStatistics = new DescriptiveStatistics()
     val recallStats: DescriptiveStatistics = new DescriptiveStatistics()
     val fmeasureStats: DescriptiveStatistics = new DescriptiveStatistics()
     val weightedmean: Mean = new Mean()
     val weigths: ArrayBuffer[Double] = ArrayBuffer()
 
+    Console.err.println("Training classifier")
     val multiclassInstances: Instances = DataSource.read(config.arff.getCanonicalPath)
     multiclassInstances.setClassIndex(multiclassInstances.numAttributes - 1)
 
@@ -75,6 +72,7 @@ object AnnotatedClassifier extends Classifier {
     learner.setOptions("-K 0 -B".split(' '))
     learner.buildClassifier(multiclassInstances)
 
+    Console.err.println("Evaluating classifier")
     val eval: Evaluation = new Evaluation(multiclassInstances)
     eval.crossValidateModel(learner, multiclassInstances, 10, new Random(0))
 
@@ -103,6 +101,8 @@ object AnnotatedClassifier extends Classifier {
     generalresults.write("===============\n")
     generalresults.write("PREC\tRECALL\tF-SCORE\tCLASS\n")
 
+    Console.err.println("Gathering classifier's statistics")
+
     for ((file, idx) <- config.arff_files.listFiles().sortBy(_.getName).zipWithIndex) {
       val classname: String = file.getName.split('.')(0)
       val classindex: Int = multiclassInstances.classAttribute.indexOfValue(classname)
@@ -111,11 +111,10 @@ object AnnotatedClassifier extends Classifier {
       instances.setClassIndex(instances.numAttributes - 1)
 
       val selection: AttributeSelection = new AttributeSelection()
-      val selectionEval: CfsSubsetEval = new CfsSubsetEval()
-      val selectionSearch: BestFirst = new BestFirst()
+      val selectionEval: InfoGainAttributeEval = new InfoGainAttributeEval()
+      val selectionSearch: Ranker = new Ranker()
 
-      selectionEval.setOptions("-P 1 -E 1".split(" "))
-      selectionSearch.setOptions("-D 1 -E 1".split(" "))
+      selectionSearch.setOptions("-T 0.001 -N -1".split(" "))
       selection.setEvaluator(selectionEval)
       selection.setSearch(selectionSearch)
       selection.setInputFormat(instances)
@@ -138,8 +137,6 @@ object AnnotatedClassifier extends Classifier {
       for(feature <- filteredInstances.enumerateAttributes) selectedFeatures.write(s"${feature.name}\n")
 
       selectedFeatures.close()
-
-      print_progress(idx + 1, total)
     }
 
     generalresults.write("\nGeneral Results Statistics\n")
