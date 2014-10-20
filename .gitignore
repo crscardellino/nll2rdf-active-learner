@@ -22,5 +22,5 @@ project/plugins/project/
 .idea_modules/
 
 # Exceptions
-!bin/nll2rdf.jar
+# !bin/nll2rdf.jar
 !classifier/lib/weka-3.7.11.jar

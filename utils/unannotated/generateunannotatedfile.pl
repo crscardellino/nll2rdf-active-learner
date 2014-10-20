@@ -39,7 +39,7 @@ my $directory = dirname (__FILE__);
 
 print STDERR "Creating instances file with filter $filter for unannotated corpus\n";
 
-my $rc = system "perl $directory/getdata.pl $untagdir $featuresdir $outputdir/instances > $outputdir/data/unannotated.nll2rdf.data";
+my $rc = system "perl $directory/getdata.pl $untagdir $featuresdir $outputdir/instances $oldarff > $outputdir/data/unannotated.nll2rdf.data";
 die "Error in processing the corpus: $!" if ($rc >> 8) != 0;
 
 $rc = system "perl $directory/getcsv.pl $outputdir/data/unannotated.nll2rdf.data $outputdir $oldarff $filter";
