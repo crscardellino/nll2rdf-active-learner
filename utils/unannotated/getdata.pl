@@ -23,6 +23,7 @@ use POSIX;
 my $dir = shift @ARGV;
 my $featuresdir = shift @ARGV;
 my $instances = shift @ARGV;
+my $oldarff = shift @ARGV;
 
 opendir(my $dh, $dir) or die "Couldn't open the directory";
 
@@ -45,9 +46,9 @@ sub get_progress {
   return "[". $totalbars . $totalempties . "]" . sprintf("%.2f%%", $percentage);
 }
 
-my @features = `cat $featuresdir/features.*.txt`;
+my @features = `grep "^\@ATTRIBUTE" $oldarff | awk '{ print \$2 }'`;
 chomp @features;
-
+pop @features; # Remove the class feature
 my %relevantfeatures = map { $_ => 1 } @features;
 
 print STDERR "Getting instances from unannotated corpus\n";
@@ -84,28 +85,31 @@ while(readdir $dh) {
 
     if ($newinstance) {
       # The data is only good if has at least one of the relevant features
-      my %hintunigrams = map { $_ => 1 } grep { exists $relevantfeatures{$_} } @unigrams;
-      my %hintbigrams = map { $_ => 1 } grep { exists $relevantfeatures{$_} } @bigrams;
-      my %hinttrigrams = map { $_ => 1 } grep { exists $relevantfeatures{$_} } @trigrams;
+      my @filtered_unigrams = grep { exists $relevantfeatures{$_} } @unigrams;
+      my @filtered_bigrams = grep { exists $relevantfeatures{$_} } @bigrams;
+      my @filtered_trigrams = grep { exists $relevantfeatures{$_} } @trigrams;
       
-      if (scalar(keys %hintunigrams) > 0 or scalar(keys %hintbigrams) > 0 or scalar(keys %hinttrigrams) > 0) {
-        print join(",", @unigrams) . ",";
-        print join(",", @bigrams) . ",";
-        print join(",", @trigrams);
+      if (scalar(@filtered_unigrams) > 0 or scalar(@filtered_bigrams) > 0 or scalar(@filtered_trigrams) > 0) {
+        print join(",", @filtered_unigrams) if scalar(@filtered_unigrams) > 0;
+        print "," . join(",", @filtered_bigrams) if scalar(@filtered_bigrams) > 0;
+        print "," . join(",", @filtered_trigrams) if scalar(@filtered_trigrams) > 0;
 
         # Print uniskipbigram (if any)
         for my $i (0 .. (scalar(@unigrams) - 3)) {
-          print "," . $unigrams[$i] . ";" . $unigrams[$i+2];
+          my $skipgram = $unigrams[$i] . ";" . $unigrams[$i+2];
+          print "," . $skipgram if exists $relevantfeatures{$skipgram};
         }
 
         # Print biskipbigram (if any)
         for my $i (0 .. (scalar(@unigrams) - 4)) {
-          print "," . $unigrams[$i] . ";" . $unigrams[$i+3];
+          my $skipgram = $unigrams[$i] . ";" . $unigrams[$i+3];
+          print "," . $skipgram if exists $relevantfeatures{$skipgram};
         }
 
         # uniskiptrigram
         for my $i (0 .. scalar(@unigrams) - 5) {
-          print "," . $unigrams[$i] . ";" . $unigrams[$i+2] . ";" . $unigrams[$i+4];
+          my $skipgram = $unigrams[$i] . ";" . $unigrams[$i+2] . ";" . $unigrams[$i+4];
+          print "," . $skipgram if exists $relevantfeatures{$skipgram};
         }
 
         print ",$filename-$instance_number\n";

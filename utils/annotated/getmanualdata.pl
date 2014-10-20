@@ -21,10 +21,13 @@ use warnings;
 
 my $datafile = shift @ARGV;
 my $instancesdir = shift @ARGV;
+my $featuresdir = shift @ARGV;
 
 open(my $fh, $datafile) or die $!;
 close $fh;
-opendir(my $dh, $instancesdir) or die "Must provide a valid instances directory";
+opendir(my $dh, $featuresdir) or die $!;
+closedir $dh;
+opendir($dh, $instancesdir) or die $!;
 
 print STDERR "Adding manually annotated data to the corpus\n";
 
@@ -33,16 +36,19 @@ while(readdir $dh) {
   my $instance = $1;
   my $class = $2;
 
-  die "$instance $class" if $class !~ m/^[A-Z\-]+$/; 
-
   my $data = `grep ",$instance\$" $datafile`;
   chomp $data;
   my @data = split ",", $data;
-
-  die $! if ($? >> 8) != 0;
-
   pop @data;
-  print join(",", @data) . ",$class\n";
+
+  # Preprocess of the instance to make it monolabel
+  my $featuresfilter = `cat $featuresdir/$class.filter`;
+  chomp $featuresfilter;
+  my %featuresfilter = map { $_ => 1 } (split ",", $featuresfilter);
+
+  my @processeddata = grep { !exists $featuresfilter{$_} } @data;
+
+  print join(",", @processeddata) . ",$class\n";
 }
 
 closedir $dh;
