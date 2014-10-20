@@ -48,7 +48,7 @@ while(readdir $dh) {
 
   my @processeddata = grep { !exists $featuresfilter{$_} } @data;
 
-  print join(",", @processeddata) . ",$class\n";
+  print join(",", @processeddata) . ",$class\n" if scalar(@processeddata) > 0;
 }
 
 closedir $dh;

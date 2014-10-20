@@ -18,6 +18,7 @@
 
 use strict;
 use warnings;
+use String::Util qw/trim/;
 
 my %set = ();
 
@@ -29,6 +30,7 @@ while(<STDIN>){
   my $class = pop @line;
 
   foreach my $feature (@line) {
+    die $class if trim($feature) eq '';
     $set{$feature} = 1;
   }
 }

@@ -46,9 +46,9 @@ sub get_progress {
   return "[". $totalbars . $totalempties . "]" . sprintf("%.2f%%", $percentage);
 }
 
-my @features = `grep "^\@ATTRIBUTE" $oldarff | awk '{ print \$2 }'`;
+my @features = `cat $featuresdir/features.*.txt | sort | uniq`;
 chomp @features;
-pop @features; # Remove the class feature
+# pop @features; # Remove the class feature
 my %relevantfeatures = map { $_ => 1 } @features;
 
 print STDERR "Getting instances from unannotated corpus\n";
@@ -90,49 +90,65 @@ while(readdir $dh) {
       my @filtered_trigrams = grep { exists $relevantfeatures{$_} } @trigrams;
       
       if (scalar(@filtered_unigrams) > 0 or scalar(@filtered_bigrams) > 0 or scalar(@filtered_trigrams) > 0) {
-        print join(",", @filtered_unigrams) if scalar(@filtered_unigrams) > 0;
-        print "," . join(",", @filtered_bigrams) if scalar(@filtered_bigrams) > 0;
-        print "," . join(",", @filtered_trigrams) if scalar(@filtered_trigrams) > 0;
+        my $printclass = ((scalar(@filtered_unigrams) > 0) or (scalar(@filtered_bigrams) > 0) or (scalar(@filtered_trigrams) > 0));
+
+        print join(",", @filtered_unigrams) . "," if scalar(@filtered_unigrams) > 0;
+        print join(",", @filtered_bigrams) . "," if scalar(@filtered_bigrams) > 0;
+        print join(",", @filtered_trigrams) . "," if scalar(@filtered_trigrams) > 0;
 
         # Print uniskipbigram (if any)
+        my @skipgrams = ();
         for my $i (0 .. (scalar(@unigrams) - 3)) {
           my $skipgram = $unigrams[$i] . ";" . $unigrams[$i+2];
-          print "," . $skipgram if exists $relevantfeatures{$skipgram};
+          push @skipgrams, $skipgram if exists $relevantfeatures{$skipgram};
         }
+        print join(",", @skipgrams) . "," if scalar(@skipgrams) > 0;
+
+        $printclass = ($printclass or (scalar(@skipgrams) > 0));
 
         # Print biskipbigram (if any)
+        @skipgrams = ();
         for my $i (0 .. (scalar(@unigrams) - 4)) {
           my $skipgram = $unigrams[$i] . ";" . $unigrams[$i+3];
-          print "," . $skipgram if exists $relevantfeatures{$skipgram};
+          push @skipgrams, $skipgram if exists $relevantfeatures{$skipgram};
         }
+        print join(",", @skipgrams) . "," if scalar(@skipgrams) > 0;
+
+        $printclass = ($printclass or (scalar(@skipgrams) > 0));
 
         # uniskiptrigram
+        @skipgrams = ();
         for my $i (0 .. scalar(@unigrams) - 5) {
           my $skipgram = $unigrams[$i] . ";" . $unigrams[$i+2] . ";" . $unigrams[$i+4];
-          print "," . $skipgram if exists $relevantfeatures{$skipgram};
+          push @skipgrams, $skipgram if exists $relevantfeatures{$skipgram};
         }
+        print join(",", @skipgrams) . "," if scalar(@skipgrams) > 0;
 
-        print ",$filename-$instance_number\n";
+        $printclass = ($printclass or (scalar(@skipgrams) > 0));
 
-        if ($isitem) {
-          pop @instance if(scalar(@instance) > 1); # Remove the item word
-          pop @instance if(scalar(@instance) > 1) and $instance[$#instance] eq '-lrb-';
+        if($printclass) {
+          print "$filename-$instance_number\n";
+
+          if ($isitem) {
+            pop @instance if(scalar(@instance) > 1); # Remove the item word
+            pop @instance if(scalar(@instance) > 1) and $instance[$#instance] eq '-lrb-';
+          }
+
+          open(my $ih, ">", "$instances/$filename-$instance_number.txt") or die "Couldn't open instance file for writing: $!";
+          my $inst = join " ", @instance;
+          $inst =~ s/\s([.;:,])/$1/g;
+          $inst =~ s/\-lrb\-\s/\(/g;
+          $inst =~ s/\s\-rrb\-/\)/g;
+          $inst =~ s/\`\`\s/\"/g;
+          $inst =~ s/\s\'\'/\"/g;
+          $inst =~ s/\s\'s/\'s/g;
+          $inst =~ s/([:;])\s/$1\n/g;
+
+          $instance_number++;
+
+          print $ih $inst . "\n";
+          close $ih;
         }
-
-        open(my $ih, ">", "$instances/$filename-$instance_number.txt") or die "Couldn't open instance file for writing: $!";
-        my $inst = join " ", @instance;
-        $inst =~ s/\s([.;:,])/$1/g;
-        $inst =~ s/\-lrb\-\s/\(/g;
-        $inst =~ s/\s\-rrb\-/\)/g;
-        $inst =~ s/\`\`\s/\"/g;
-        $inst =~ s/\s\'\'/\"/g;
-        $inst =~ s/\s\'s/\'s/g;
-        $inst =~ s/([:;])\s/$1\n/g;
-
-        $instance_number++;
-
-        print $ih $inst . "\n";
-        close $ih;
       }
 
       @instance = ();
