@@ -25,7 +25,7 @@ import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics
 import org.apache.commons.math3.stat.descriptive.moment.Mean
 import scala.collection.JavaConversions._
 import scala.collection.mutable.ArrayBuffer
-import weka.attributeSelection.{BestFirst, CfsSubsetEval}
+import weka.attributeSelection.{Ranker, InfoGainAttributeEval}
 import weka.classifiers.Evaluation
 import weka.classifiers.functions.LibSVM
 import weka.core.Instances
@@ -111,11 +111,10 @@ object AnnotatedClassifier extends Classifier {
       instances.setClassIndex(instances.numAttributes - 1)
 
       val selection: AttributeSelection = new AttributeSelection()
-      val selectionEval: CfsSubsetEval = new CfsSubsetEval()
-      val selectionSearch: BestFirst = new BestFirst()
+      val selectionEval: InfoGainAttributeEval = new InfoGainAttributeEval()
+      val selectionSearch: Ranker = new Ranker()
 
-      selectionEval.setOptions("-P 1 -E 1".split(" "))
-      selectionSearch.setOptions("-D 1 -E 1".split(" "))
+      selectionSearch.setOptions("-T 0.001 -N -1".split(" "))
       selection.setEvaluator(selectionEval)
       selection.setSearch(selectionSearch)
       selection.setInputFormat(instances)
