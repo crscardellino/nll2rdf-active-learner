@@ -1,0 +1,68 @@
+#!/usr/bin/env perl
+
+# NLL2RDF Active Learner
+# Copyright (C) 2014 Cristian A. Cardellino
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+use autodie;
+use strict;
+use warnings;
+use Cwd qw/ abs_path /;
+use File::Basename qw/ dirname /;
+
+sub print_help {
+  print STDERR "Usage: nll2rdf cmd [args]\n\n";
+  print STDERR sprintf("\t%-10s Run the graphical interface\n", "gui");
+  print STDERR sprintf("\t%-10s Classify a license\n", "classify");
+  print STDERR sprintf("\t%-10s Evaluate a trained model\n\n", "test");
+}
+
+print STDERR "NLL2RDF Active Learner Copyright (C) 2014 Cristian A. Cardellino\n";
+print STDERR "This program comes with ABSOLUTELY NO WARRANTY.\n";
+print STDERR "This is free software, and you are welcome to redistribute it under certain conditions.\n";
+print STDERR "See LICENSE for details, or visit <http://www.gnu.org/licenses/gpl.html>.\n\n";
+
+my $cmd = shift @ARGV;
+my %validcmds = map { $_ => 1 } qw/ gui classify test /;
+
+if (!defined $cmd or !exists $validcmds{$cmd}) {
+  print_help;
+  die "You must provide a valid command";
+}
+
+if ($cmd eq "gui") {
+  # Configuring Play application to be able to run the perl scripts
+  my $basedir = abs_path(dirname(__FILE__));
+
+  my @configfile = `grep -v "^learner.basedir" ./gui/conf/application.conf`;
+  chomp @configfile;
+  push @configfile, "learner.basedir=\"$basedir\"";
+
+  open(my $fh, ">", "./gui/conf/application.conf");
+  print $fh join("\n", @configfile);
+  close $fh;
+
+  # For auxiliary files
+  mkdir "/tmp/nll2rdf.tmp";
+
+  # Running the gui (HTML)
+  print STDERR "Running the Play Application\n";
+
+  chdir "./gui";
+  system "./activator run -Dhttp.port=3000 -Dhttp.address=127.0.0.1";
+
+  print STDERR "Play application finished\n";
+  chdir $basedir;
+}
