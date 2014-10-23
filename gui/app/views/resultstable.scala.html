@@ -1,0 +1,203 @@
+@(results: Array[EvaluationResults], statResults: Array[EvaluationResults], accAndKappa: AccuracyAndKappa,
+  oldResults: Array[EvaluationResults], oldStatResults: Array[EvaluationResults], oldAccAndKappa: AccuracyAndKappa)
+
+@if(oldAccAndKappa == null) {
+<div class="row">
+  <div class="col-md-4 col-md-offset-4">
+    <h4 class="text-center">Accuracy and Kappa</h4>
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Accuracy</th>
+        <th>Kappa</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>@accAndKappa.accuracy</td>
+        <td>@accAndKappa.kappa</td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-md-6 col-md-offset-3">
+    <h4 class="text-center">Classes Results</h4>
+    <table class="table">
+      <thead>
+      <tr>
+        <th>Class</th>
+        <th>Precision</th>
+        <th>Recall</th>
+        <th>FMeasure</th>
+      </tr>
+      </thead>
+      <tbody>
+      @for(result <- results) {
+        <tr>
+          <td>@result.id</td>
+          <td>@result.precision</td>
+          <td>@result.recall</td>
+          <td>@result.fMeasure</td>
+        </tr>
+      }
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-md-6 col-md-offset-3">
+    <h4 class="text-center">Results Statistics</h4>
+    <table class="table">
+      <thead>
+      <tr>
+        <th>Statistic</th>
+        <th>Precision</th>
+        <th>Recall</th>
+        <th>FMeasure</th>
+      </tr>
+      </thead>
+      <tbody>
+      @for(result <- statResults) {
+        <tr>
+          <td>@result.id</td>
+          <td>@result.precision</td>
+          <td>@result.recall</td>
+          <td>@result.fMeasure</td>
+        </tr>
+      }
+      </tbody>
+    </table>
+  </div>
+</div>
+
+} else {
+
+<div class="row">
+  <div class="col-md-4 col-md-offset-4">
+    <h4 class="text-center">Accuracy and Kappa</h4>
+    <table class="table">
+      <thead>
+      <tr>
+        <th>Accuracy</th>
+        <th>Kappa</th>
+      </tr>
+      </thead>
+      <tbody>
+      <tr>
+        @if(accAndKappa.accuracy - oldAccAndKappa.accuracy > 0) {
+          <td class="success">@accAndKappa.accuracy (+@{accAndKappa.accuracy - oldAccAndKappa.accuracy})</td>
+        } else { @if(accAndKappa.accuracy - oldAccAndKappa.accuracy < 0) {
+          <td class="danger">@accAndKappa.accuracy (-@{accAndKappa.accuracy - oldAccAndKappa.accuracy})</td>
+        } else {
+          <td>@accAndKappa.accuracy</td>
+        }}
+
+        @if(accAndKappa.kappa - oldAccAndKappa.kappa > 0) {
+          <td class="success">@accAndKappa.kappa (+@{accAndKappa.kappa - oldAccAndKappa.kappa})</td>
+        } else { @if(accAndKappa.kappa - oldAccAndKappa.kappa < 0) {
+          <td class="danger">@accAndKappa.kappa (-@{accAndKappa.kappa - oldAccAndKappa.kappa})</td>
+        } else {
+          <td>@accAndKappa.kappa</td>
+        }}
+      </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-md-12 text-center">
+    <h4>Classes Results</h4>
+    <table class="table">
+      <thead>
+      <tr>
+        <th>Class</th>
+        <th>Precision</th>
+        <th>Recall</th>
+        <th>FMeasure</th>
+      </tr>
+      </thead>
+      <tbody>
+      @for((result, idx) <- results.zipWithIndex) {
+      <tr>
+        <td>@result.id</td>
+        @if(result.precision - oldResults(idx).precision > 0) {
+          <td class="success">@result.precision (+@{result.precision - oldResults(idx).precision})</td>
+        } else { @if(result.precision - oldResults(idx).precision < 0) {
+          <td class="danger">@result.precision (-@{result.precision - oldResults(idx).precision})</td>
+        } else {
+          <td>@result.precision</td>
+        }}
+
+        @if(result.recall - oldResults(idx).recall > 0) {
+          <td class="success">@result.recall (+@{result.recall - oldResults(idx).recall})</td>
+        } else { @if(result.recall - oldResults(idx).recall < 0) {
+          <td class="danger">@result.recall (-@{result.recall - oldResults(idx).recall})</td>
+        } else {
+          <td>@result.recall</td>
+        }}
+
+        @if(result.fMeasure - oldResults(idx).precision > 0) {
+          <td class="success">@result.precision (+@{result.precision - oldResults(idx).precision})</td>
+        } else { @if(result.precision - oldResults(idx).precision < 0) {
+          <td class="danger">@result.precision (-@{result.precision - oldResults(idx).precision})</td>
+        } else {
+          <td>@result.precision</td>
+        }}
+      </tr>
+      }
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-md-12 text-center">
+    <h4>Results Statistics</h4>
+    <table class="table">
+      <thead>
+      <tr>
+        <th>Statistic</th>
+        <th>Precision</th>
+        <th>Recall</th>
+        <th>F-Score</th>
+      </tr>
+      </thead>
+      <tbody>
+      @for((result, idx) <- statResults.zipWithIndex) {
+      <tr>
+        <td>@result.id</td>
+        @if(result.precision - oldStatResults(idx).precision > 0) {
+          <td class="success">@result.precision (+@{result.precision - oldStatResults(idx).precision})</td>
+        } else { @if(result.precision - oldStatResults(idx).precision < 0) {
+          <td class="danger">@result.precision (-@{result.precision - oldStatResults(idx).precision})</td>
+        } else {
+          <td>@result.precision</td>
+        }}
+
+        @if(result.recall - oldStatResults(idx).recall > 0) {
+          <td class="success">@result.recall (+@{result.recall - oldStatResults(idx).recall})</td>
+        } else { @if(result.recall - oldStatResults(idx).recall < 0) {
+          <td class="danger">@result.recall (-@{result.recall - oldStatResults(idx).recall})</td>
+        } else {
+          <td>@result.recall</td>
+        }}
+
+        @if(result.fMeasure - oldStatResults(idx).precision > 0) {
+          <td class="success">@result.precision (+@{result.precision - oldStatResults(idx).precision})</td>
+        } else { @if(result.precision - oldStatResults(idx).precision < 0) {
+          <td class="danger">@result.precision (-@{result.precision - oldStatResults(idx).precision})</td>
+        } else {
+          <td>@result.precision</td>
+        }}
+      </tr>
+      }
+      </tbody>
+    </table>
+  </div>
+</div>
+}

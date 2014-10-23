@@ -1,4 +1,69 @@
-@(message: String)
+@()
 
 @main("NLL2RDF Active Learner") {
+<!-- Main jumbotron for a primary marketing message or call to action -->
+<div class="container">
+  <!-- Example row of columns -->
+  <div class="row">
+    <div class="col-md-6 col-md-offset-3 text-center">
+      <h2>Select Your Options</h2>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-8 col-md-offset-2">
+      @helper.form(routes.ActiveLearner.startTrainer, 'class -> "form-horizontal", 'enctype -> "multipart/form-data"){
+        <div class="form-group">
+          <label for="tagged-corpus" class="col-sm-4 control-label">Tagged corpus</label>
+          <div class="col-sm-8">
+            <input type="file" class="form-control" id="tagged-corpus" name="taggedcorpus">
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="untagged-corpus" class="col-sm-4 control-label">Untagged corpus</label>
+          <div class="col-sm-8">
+            <input type="file" class="form-control" id="untagged-corpus" name="untaggedcorpus">
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="queries" class="col-sm-4 control-label">Number of queries</label>
+          <div class="col-sm-8">
+            <input type="text" class="form-control" id="queries" name="queries" placeholder="5">
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="tagged-filter" class="col-sm-4 control-label">Filter of tagged corpus</label>
+          <div class="col-sm-8">
+            <input type="text" class="form-control" id="tagged-filter" name="tagfilter" placeholder="0">
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="untagged-filter" class="col-sm-4 control-label">Filter of untagged corpus</label>
+          <div class="col-sm-8">
+            <input type="text" class="form-control" id="untagged-filter" name="untagfilter" placeholder="25">
+          </div>
+        </div>
+        <div class="form-group">
+          <div class="col-sm-offset-4 col-sm-8">
+            <div class="radio">
+              <label>
+                <input type="radio" name="typelearning" id="active" value="active" checked>
+                <strong>Active Learning</strong>
+              </label>
+              &nbsp;
+              <label>
+                <input type="radio" name="typelearning" id="passive" value="passive">
+                <strong>Passive Learning</strong>
+              </label>
+            </div>
+          </div>
+        </div>
+        <div class="form-group">
+          <div class="col-sm-offset-4 col-sm-8">
+            <button type="submit" class="btn btn-primary">Begin Learning</button>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+</div> <!-- /container -->
 }

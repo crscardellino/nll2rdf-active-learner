@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-use autodie;
+use autodie qw/ open close opendir closedir chdir /;
 use strict;
 use warnings;
 use Cwd qw/ abs_path /;
@@ -46,8 +46,9 @@ if ($cmd eq "gui") {
   # Configuring Play application to be able to run the perl scripts
   my $basedir = abs_path(dirname(__FILE__));
 
-  my @configfile = `grep -v "^learner.basedir" ./gui/conf/application.conf`;
+  my @configfile = `grep -v "^learner.basedir" ./gui/conf/application.conf | grep -v "^# Learner basedir"`;
   chomp @configfile;
+  push @configfile, "# Learner basedir (for executing Perl scripts)";
   push @configfile, "learner.basedir=\"$basedir\"";
 
   open(my $fh, ">", "./gui/conf/application.conf");
@@ -57,11 +58,15 @@ if ($cmd eq "gui") {
   # For auxiliary files
   mkdir "/tmp/nll2rdf.tmp";
 
+  # For results and models
+  mkdir "./models";
+  mkdir "./results";
+
   # Running the gui (HTML)
   print STDERR "Running the Play Application\n";
 
   chdir "./gui";
-  system "./activator run -Dhttp.port=3000 -Dhttp.address=127.0.0.1";
+  system "./activator run -Dhttp.port=3000";
 
   print STDERR "Play application finished\n";
   chdir $basedir;

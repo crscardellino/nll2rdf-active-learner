@@ -16,25 +16,29 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package nll2rdf.utils
+package nll2rdf.classifiers
 
-import scala.collection.JavaConversions._
+import weka.attributeSelection.{InfoGainAttributeEval, Ranker}
 import weka.classifiers.AbstractClassifier
 import weka.classifiers.bayes.NaiveBayesMultinomial
 import weka.core.{Instance, Instances}
-import weka.attributeSelection.{InfoGainAttributeEval, Ranker}
 import weka.filters.Filter
 import weka.filters.supervised.attribute.AttributeSelection
 import weka.filters.unsupervised.attribute.MakeIndicator
+import scala.collection.JavaConversions._
+import scala.collection.mutable.ArrayBuffer
 
 
 class NaiveBayesInfoGain extends AbstractClassifier {
   var classifiers: Array[NaiveBayesMultinomial] = null
   var filters: Array[AttributeSelection] = null
+  var features: Array[Array[String]] = null
+  var rankerSize: Int = 50
 
   def buildClassifier(instances: Instances) {
     classifiers = new Array(instances.numClasses)
     filters = new Array(instances.numClasses)
+    features = new Array(instances.numClasses)
     val classFilters: Array[MakeIndicator] = new Array(instances.numClasses)
 
     /* Create the filters for binary data */
@@ -52,14 +56,20 @@ class NaiveBayesInfoGain extends AbstractClassifier {
       val evaluator: InfoGainAttributeEval = new InfoGainAttributeEval()
       val search: Ranker = new Ranker()
 
-      search.setOptions("-T 0.001 -N -1".split(' '))
+      search.setOptions(s"-T 0.001 -N -1".split(' '))
       filters(i).setEvaluator(evaluator)
       filters(i).setSearch(search)
       filters(i).setInputFormat(newInstances)
 
       classifiers(i) = new NaiveBayesMultinomial()
 
-      classifiers(i).buildClassifier(Filter.useFilter(newInstances, filters(i)))
+      val filtered: Instances = Filter.useFilter(newInstances, filters(i))
+
+      classifiers(i).buildClassifier(filtered)
+
+      features(i) =
+          (for ((feature, idx) <- filtered.enumerateAttributes().zipWithIndex if idx < rankerSize)
+          yield feature.name()).toArray
     }
   }
 
@@ -75,17 +85,8 @@ class NaiveBayesInfoGain extends AbstractClassifier {
     distributionForInstance(instance).zipWithIndex.maxBy(_._1)._2
   }
 
-  def getAllFilteredAttributesSet(instance: Instance): Set[String] =
-    (for (filter <- filters) yield {
-      filter.input(instance)
-      val filtered: Instance = filter.output()
-
-      for(attribute <- filtered.enumerateAttributes()) yield attribute.name()
+  def getAllFilteredFeaturesSet: Set[String] =
+    (for (featSet <- features) yield {
+      for(feature <- featSet) yield feature
     }).flatMap(x => x).toSet
-
-  def getFilteredAttributesSet(instance: Instance, classvalue: Int): Array[String] = {
-    filters(classvalue).input(instance)
-    val filtered: Instance = filters(classvalue).output()
-    (for(attribute <- filtered.enumerateAttributes()) yield attribute.name()).toArray
-  }
 }

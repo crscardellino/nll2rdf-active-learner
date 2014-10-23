@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package nll2rdf.utils
+package nll2rdf.activelearning
 
 import scala.collection.mutable.{Map => MMap}
 

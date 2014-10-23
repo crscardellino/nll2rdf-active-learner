@@ -1,0 +1,44 @@
+@(iteration: Int)
+
+@extra_js = {
+<script type="text/javascript">
+    $(window).load(function() {
+      $.get("query/" + @iteration,
+        {},
+        function(data) {
+          $("#results").empty();
+          $("#results").append(data);
+          $("#query").removeClass("hidden");
+        }
+      );
+    });
+  </script>
+}
+
+@main("NLL2RDF Active Learner: Results", extra_js = extra_js) {
+<div class="container">
+  <div class="row">
+    <div class="col-md-6 col-md-offset-3 text-center">
+      @if(iteration == 0) {
+      <h2>Initial Iteration: Results</h2>
+      } else {
+      <h2>Iteration Number @iteration: Results</h2>
+      }
+    </div>
+  </div>
+  <div id="query" class="row hidden">
+    <div class="col-md-4 col-md-offset-4">
+      <a href="#" class="btn btn-primary btn-block">Query Features For Learn</a>
+    </div>
+  </div>
+  <div class="row">
+    <div id="results" class="col-md-12">
+      <div class="text-center">
+        <h4><i class="fa fa-spinner fa-spin fa-lg"></i></h4>
+        <h4>Loading Queries</h4>
+        <h5>This may take a while. Check the debug info in the console running the server.</h5>
+      </div>
+    </div>
+  </div>
+</div>
+}

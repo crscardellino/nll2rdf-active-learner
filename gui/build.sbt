@@ -1,6 +1,8 @@
+import play.Play.autoImport._
+
 name := """gui"""
 
-version := "1.0-SNAPSHOT"
+version := "1.0"
 
 lazy val root = (project in file(".")).enablePlugins(PlayScala)
 
@@ -12,5 +14,7 @@ libraryDependencies ++= Seq(
   cache,
   ws
 )
+
+libraryDependencies += "org.apache.commons" % "commons-io" % "1.3.2"
 
 
