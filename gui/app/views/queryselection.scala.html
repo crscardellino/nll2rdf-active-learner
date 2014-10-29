@@ -1,0 +1,30 @@
+@(queries: Map[String, String], classes: Map[String, String])
+
+<form id="query-form" class="form-horizontal">
+  @for(((query, query_value), idx) <- queries.toSeq.sortBy(_._1).zipWithIndex.sortBy(_._2)){
+  <div class="row">
+    <div class="col-md-10 col-md-offset-1">
+      <div class="panel panel-primary">
+        <div class="panel-heading">
+          <h3 class="panel-title">Instance @{idx+1}</h3>
+        </div>
+        <div class="panel-body text-justify">
+          @query_value
+        </div>
+        <div class="panel-footer">
+          <h5 class="text-center">Which classes apply for this sentence?</h5>
+          <div class="row">
+            <div class="col-md-6 col-md-offset-3">
+              <select id="@query" class="form-control query-classes" size="5" multiple>
+                @for((classvalue, classname) <- classes.toSeq.sortBy(_._1)){
+                    <option value="@classvalue">@classname</option>
+                }
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  }
+</form>

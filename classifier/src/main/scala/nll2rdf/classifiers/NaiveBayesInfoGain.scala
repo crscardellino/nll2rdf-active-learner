@@ -18,6 +18,7 @@
 
 package nll2rdf.classifiers
 
+import scala.collection.JavaConversions._
 import weka.attributeSelection.{InfoGainAttributeEval, Ranker}
 import weka.classifiers.AbstractClassifier
 import weka.classifiers.bayes.NaiveBayesMultinomial
@@ -25,25 +26,22 @@ import weka.core.{Instance, Instances}
 import weka.filters.Filter
 import weka.filters.supervised.attribute.AttributeSelection
 import weka.filters.unsupervised.attribute.MakeIndicator
-import scala.collection.JavaConversions._
-import scala.collection.mutable.ArrayBuffer
 
 
-class NaiveBayesInfoGain extends AbstractClassifier {
-  var classifiers: Array[NaiveBayesMultinomial] = null
-  var filters: Array[AttributeSelection] = null
-  var features: Array[Array[String]] = null
-  var rankerSize: Int = 50
+class NaiveBayesInfoGain(numClasses: Int, _rankerSize: Int = 100) extends AbstractClassifier {
+  val classes: Array[String] = new Array(numClasses)
+  val classifiers: Array[NaiveBayesMultinomial] = new Array(numClasses)
+  val filters: Array[AttributeSelection] = new Array(numClasses)
+  val features: Array[Array[String]] = new Array(numClasses)
+  val rankerSize: Int = _rankerSize
 
   def buildClassifier(instances: Instances) {
-    classifiers = new Array(instances.numClasses)
-    filters = new Array(instances.numClasses)
-    features = new Array(instances.numClasses)
     val classFilters: Array[MakeIndicator] = new Array(instances.numClasses)
 
     /* Create the filters for binary data */
     for(classobject <- instances.classAttribute.enumerateValues) {
       val i: Int = instances.classAttribute.indexOfValue(classobject.asInstanceOf[String])
+      classes(i) = classobject.asInstanceOf[String]
 
       classFilters(i) = new MakeIndicator()
       classFilters(i).setAttributeIndex((instances.classIndex + 1).toString)

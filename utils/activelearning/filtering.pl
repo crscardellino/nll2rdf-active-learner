@@ -16,31 +16,31 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+use autodie qw/ open close /;
 use strict;
 use warnings;
 
-my $featuresdir = shift @ARGV;
+my $iteration = shift @ARGV;
+die "You must provide a valid iteration number" unless defined $iteration;
 
-print STDERR "Analyzing features\n";
+print STDERR "Creating filters\n";
 
-opendir(my $dh, $featuresdir) or die $!;
+my @features_files = `find /tmp/nll2rdf.tmp/features -name features.*.$iteration.txt"`
+chomp @features_files;
 
-while(readdir $dh) {
-  next unless $_ =~ m/^features\.([A-Z\-]+)\.txt$/;
+foreach my $feature_file(@features_files) {
+  $feature_file =~ m/^features\.([A-Z\-]+)\.txt$/;
   my $class = $1;
 
-  my @classfeatures = `cat $featuresdir/features.$class.txt`;
-  chomp @classfeatures;
-  my %classfeatures = map { $_ => 1 } @classfeatures;
-  my @nonclassfeatures = `find $featuresdir -name "features.*.txt" -not -name "features.$class.txt" -print0 | xargs -0 cat`;
-  chomp @nonclassfeatures;
-  my %nonclassfeatures = map { $_ => 1 } (grep { !exists $classfeatures{$_} } @nonclassfeatures);
+  my @class_features = `cat $feature_file`;
+  chomp @class_features;
+  my %class_features = map { $_ => 1 } @class_features;
 
-  open(my $fh, ">", "$featuresdir/$class.filter") or die $!;
+  my @non_class_features = `find /tmp/nll2rdf.tmp/features -name "features.*.$iteration.txt" -not -name "features.$class.$iteration.txt" -print0 | xargs -0 cat`;
+  chomp @non_class_features;
+  my %non_class_features = map { $_ => 1 } (grep { !exists $class_features{$_} } @non_class_features);
 
-  print $fh join(",", keys %nonclassfeatures);
-
+  open(my $fh, ">", "/tmp/nll2rdf.tmp/features/filter.$class.$iteration.txt") or die $!;
+  print $fh join("\n", keys %non_class_features);
   close $fh;
 }
-
-closedir $dh;

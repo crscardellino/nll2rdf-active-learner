@@ -8,6 +8,10 @@ GET     /                           controllers.Application.index
 # Active learner
 POST    /start                      controllers.ActiveLearner.startTrainer
 GET     /train/:iteration           controllers.ActiveLearner.trainAndEvaluateCorpus(iteration: Int)
+GET     /makequeries/:iteration     controllers.ActiveLearner.makeQueries(iteration: Int)
+GET     /query/:iteration           controllers.ActiveLearner.queryInstances(iteration: Int)
+POST    /annotate/:iteration        controllers.ActiveLearner.annotate(iteration: Int)
+# GET     /features/:iteration        controllers.ActiveLearner.featuresFeedback(iteration: Int)
 
 # Testing
 GET     /test                       controllers.ActiveLearner.test

@@ -1,17 +1,20 @@
 package controllers
 
 import forms.LearnerForm
-import java.io.File
+import java.io.{PrintWriter, File}
 import models._
+import nll2rdf.activelearning.{QueriesSelection,FeaturesFeedback}
 import nll2rdf.evaluator.Evaluator
 import org.apache.commons.io.FileUtils
-import play.api.cache.Cache
-import play.api.data.Form
-import play.api.data.Forms._
 import play.api.Logger
 import play.api.Play
 import play.api.Play.current
+import play.api.cache.Cache
+import play.api.data.Form
+import play.api.data.Forms._
+import play.api.libs.json._
 import play.api.mvc._
+import scala.collection.mutable.{Map => MMap}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.io.{BufferedSource, Source}
@@ -20,6 +23,22 @@ import scala.util.Try
 
 
 object ActiveLearner extends Controller {
+  val classes = Map(
+    "NO-CLASS" -> "No class",
+    "PER-COMMERCIALIZE" -> "Permission to commercialize",
+    "PER-DERIVE" -> "Permission to derive",
+    "PER-DISTRIBUTE" -> "Permission to distribute",
+    "PER-READ" -> "Permission to read",
+    "PER-REPRODUCE" -> "Permission to reproduce",
+    "PER-SELL" -> "Permission to sell",
+    "PRO-COMMERCIALIZE" -> "Prohibition to commercialize",
+    "PRO-DERIVE" -> "Prohibition to derive",
+    "PRO-DISTRIBUTE" -> "Prohibition to distribute",
+    "REQ-ATTACHPOLICY" -> "Requirement to attach policy",
+    "REQ-ATTACHSOURCE" -> "Requirement to attach source",
+    "REQ-ATTRIBUTE" -> "Requirement to attribute",
+    "REQ-SHAREALIKE" -> "Requirement to share alike"
+  )
   val learnerForm = Form(
     mapping(
       "queries" -> default(number, 5),
@@ -27,6 +46,10 @@ object ActiveLearner extends Controller {
       "untagfilter" -> default(number, 25),
       "typelearning" -> nonEmptyText
     )(LearnerForm.apply)(LearnerForm.unapply)
+  )
+
+  val queriesForm = Form(
+    "queries" -> list(text)
   )
 
   private def runProcess(command: String): Try[Unit] = Try {
@@ -49,6 +72,87 @@ object ActiveLearner extends Controller {
     AccuracyAndKappa(data(0).toDouble, data(1).toDouble)
   }
 
+  def annotate(iteration: Int) = Action.async(BodyParsers.parse.json) { request =>
+    Future {
+      val json: JsValue = request.body
+      val settings: JsValue = Json.parse(Source.fromFile("/tmp/nll2rdf.tmp/settings.json").getLines().next)
+      val queries: Set[String] = Cache.get("queries").map(_.asInstanceOf[Set[String]]).getOrElse(sys.error("Queries not set"))
+
+      for(query <- queries) {
+        val file: File = new File(s"/tmp/nll2rdf.tmp/instances/iteration$iteration/$query.txt")
+
+        for(classname <- (json \ query).as[List[String]]) {
+          val newfile: File = new File(s"/tmp/nll2rdf.tmp/instances/iteration$iteration/tagged/$query.$classname.txt")
+          FileUtils.copyFile(file, newfile)
+        }
+      }
+
+      Play.current.configuration.getString("learner.basedir") map { basedir =>
+        val filter: Int = (settings \ "tagfilter").as[Int]
+        val filteringcmd: String = s"perl $basedir/utils/activelearning/filtering.pl $iteration"
+        val oraclecmd: String = s"perl $basedir/utils/activelearning/oracle.pl $iteration mixed $filter"
+
+        runProcess(filteringcmd).flatMap(_ => runProcess(oraclecmd)) map { _ =>
+          val featuresFeedback: FeaturesFeedback = new FeaturesFeedback(new File(s"/tmp/nll2rdf.tmp/mixed.arff"))
+
+          featuresFeedback.feedback("/tmp/nll2rdf.tmp/features", iteration)
+
+          Ok("OK")
+        } getOrElse {
+          InternalServerError("Error processing the annotated examples")
+        }
+      } getOrElse {
+        InternalServerError("The base directory of the learner couldn't be established")
+      }
+    }
+  }
+
+  def makeQueries(iteration: Int) = Action {
+    Ok(views.html.query(iteration))
+  }
+
+  def queryInstances(iteration: Int) = Action.async {
+    Future {
+      Play.current.configuration.getString("learner.basedir") map { basedir =>
+        val settings: JsValue = Json.parse(Source.fromFile("/tmp/nll2rdf.tmp/settings.json").getLines().next)
+        val file: String = s"iteration$iteration"
+        val arff: File = new File(s"$basedir/models/$file.arff")
+        val model: File = new File(s"$basedir/models/$file.model")
+        val filter: Int = (settings \ "untagfilter").as[Int]
+        val queries_size: Int = (settings \ "queries_size").as[Int]
+
+        val cmd: String = s"perl $basedir/utils/unannotated/unannotated.pl " +
+            s"/tmp/nll2rdf.tmp/untaggedcorpus/conll-corpus ${arff.getCanonicalPath} " +
+            s"$iteration $filter"
+
+        runProcess(cmd) map { _ =>
+          val csv_file: File = new File(s"/tmp/nll2rdf.tmp/unannotated.csv")
+
+          val queriesSelection = new QueriesSelection(csv_file, arff, model, queries_size)
+
+          queriesSelection.query()
+
+          val queries: MMap[String, String] = MMap()
+
+          Cache.set("queries", queriesSelection.queries.queries.keySet)
+
+          for (query <- queriesSelection.queries.queries.keys) {
+            val filename: String = s"/tmp/nll2rdf.tmp/instances/$file/$query.txt"
+            val query_value: String = Source.fromFile(filename).getLines.next()
+
+            queries += (query -> query_value)
+          }
+
+          Ok(views.html.queryselection(queries.toMap, classes))
+        } getOrElse {
+          InternalServerError("There was a problem getting the unannotated corpus")
+        }
+      } getOrElse {
+        InternalServerError("The base directory of the learner couldn't be established")
+      }
+    }
+  }
+
   def startTrainer = Action(parse.multipartFormData) { implicit request =>
     (for {
         taggedcorpus <- request.body.file("taggedcorpus")
@@ -59,9 +163,17 @@ object ActiveLearner extends Controller {
         untaggedcorpus.ref.moveTo(new File("/tmp/nll2rdf.tmp/untaggedcorpus.tar.xz"))
 
         val data = learnerForm.bindFromRequest.get
-        Cache.set("queries", data.queries)
-        Cache.set("untagfilter", data.untagfilter)
-        Cache.set("typelearning", data.typelearning)
+        val settingsJson: JsValue = Json.obj(
+          "queries_size" -> data.queries,
+          "tagfilter" -> data.tagfilter,
+          "typelearning" -> data.typelearning,
+          "untagfilter" -> data.untagfilter
+        )
+        val settings: PrintWriter = new PrintWriter(
+          new File("/tmp/nll2rdf.tmp/settings.json")
+        )
+        settings.write(Json.stringify(settingsJson))
+        settings.close()
 
         Play.current.configuration.getString("learner.basedir") map { basedir =>
           val setupcmd: String = s"perl $basedir/utils/config/setupcorpus.pl"
@@ -87,7 +199,7 @@ object ActiveLearner extends Controller {
   }
 
   def test = Action {
-    Ok(views.html.results(0))
+    Ok(views.html.query(0))
   }
 
   def trainAndEvaluateCorpus(iteration: Int) = Action.async { implicit request =>
@@ -96,16 +208,19 @@ object ActiveLearner extends Controller {
         val file: String = s"iteration$iteration"
         val filepath = s"$basedir/models/$file.arff"
 
-        Logger.debug("Creating Model Evaluator")
-        val evaluator: Evaluator = new Evaluator(filepath)
+        Logger.debug("Creating model evaluator")
+        val evaluator: Evaluator = Evaluator(filepath)
 
-        Logger.debug("Training Model")
+        Logger.debug("Training model")
         evaluator.trainAndSaveModel(s"$basedir/models/$file.model")
 
-        Logger.debug("Model Evaluation")
+        Logger.debug("Saving model features")
+        evaluator.saveModelFeatures(s"/tmp/nll2rdf.tmp/features/", 0)
+
+        Logger.debug("Model evaluation")
         evaluator.evaluate(s"$basedir/results/")
 
-        Logger.debug("Getting Evaluation Results")
+        Logger.debug("Getting evaluation results")
         val results: Array[EvaluationResults] = getResults(s"$basedir/results/generalresults.$iteration.txt")
         val oldResults: Array[EvaluationResults] =
           if (iteration > 0) getResults(s"$basedir/results/generalresults.${iteration-1}.txt")
@@ -126,9 +241,5 @@ object ActiveLearner extends Controller {
         InternalServerError("The base directory of the learner couldn't be established")
       }
     }
-  }
-
-  def queryInstances(iteration: Int) = Action.async {
-    Future { Ok }
   }
 }

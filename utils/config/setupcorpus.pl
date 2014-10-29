@@ -19,6 +19,10 @@
 use strict;
 use warnings;
 
+# For auxiliary files
+mkdir "/tmp/nll2rdf.tmp/features";
+mkdir "/tmp/nll2rdf.tmp/instances";
+
 mkdir "/tmp/nll2rdf.tmp/taggedcorpus";
 my $rc = system "tar Jxf /tmp/nll2rdf.tmp/taggedcorpus.tar.xz -C /tmp/nll2rdf.tmp/taggedcorpus";
 die if ($rc >> 8) != 0;

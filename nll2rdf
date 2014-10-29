@@ -58,8 +58,9 @@ if ($cmd eq "gui") {
   # For auxiliary files
   mkdir "/tmp/nll2rdf.tmp";
 
-  # For results and models
+  # For results, models and tagged instances
   mkdir "./models";
+  mkdir "./models/tagged";
   mkdir "./results";
 
   # Running the gui (HTML)

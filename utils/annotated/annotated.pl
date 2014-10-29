@@ -19,7 +19,7 @@
 use autodie qw/ open close opendir closedir /;
 use strict;
 use warnings;
-use File::Basename;
+use File::Basename qw/ dirname /;
 use lib dirname(__FILE__);
 use Constants qw / get_class get_rule /;
 
@@ -137,10 +137,10 @@ foreach my $feature(@filtered) {
   print $ah "\@ATTRIBUTE $feature NUMERIC\n" if $featureset{$feature} > $filter;
 }
 
-my @classes = qw/NO-CLASS PER-COMMERCIALIZE PER-DERIVE PER-DISTRIBUTE
+my @classes = qw/ NO-CLASS PER-COMMERCIALIZE PER-DERIVE PER-DISTRIBUTE
               PER-READ PER-REPRODUCE PER-SELL PRO-COMMERCIALIZE
               PRO-DERIVE PRO-DISTRIBUTE REQ-ATTACHPOLICY
-              REQ-ATTACHSOURCE REQ-ATTRIBUTE REQ-SHAREALIKE/;
+              REQ-ATTACHSOURCE REQ-ATTRIBUTE REQ-SHAREALIKE /;
 
 print $ah "\@ATTRIBUTE class-nll2rdf {" . join(",", sort @classes) . "}\n\n\@DATA\n";
 

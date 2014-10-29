@@ -34,12 +34,42 @@ class Evaluator(val learner: NaiveBayesInfoGain, val instances: Instances) {
   instances.setClassIndex(instances.numAttributes - 1)
   val evaluation: Evaluation = new Evaluation(instances)
 
-  def this(filepath: String) = this(new NaiveBayesInfoGain(), DataSource.read(filepath))
-
   def trainAndSaveModel(filepath: String): Unit = {
     learner.buildClassifier(instances)
 
     weka.core.SerializationHelper.write(filepath, learner)
+  }
+
+  def saveModelFeatures(path: String, iteration: Int): Unit = {
+    /* This should only be called after trainAndSaveModel
+       and has the precondition that the learner features
+       array is non null
+     */
+    assert(learner.features != null)
+
+    // Saving the whole features set
+    val features: PrintWriter = new PrintWriter(
+      new File(s"$path/features.$iteration.txt")
+    )
+
+    features.write(
+      learner.getAllFilteredFeaturesSet.mkString("\n")
+    )
+
+    features.close()
+
+    for (classname <- learner.classes) {
+      val classfeatures: PrintWriter = new PrintWriter(
+        new File(s"$path/features.$classname.$iteration.txt")
+      )
+      val idx: Int = learner.classes.indexOf(classname)
+
+      classfeatures.write(
+        learner.features(idx).mkString("\n")
+      )
+
+      classfeatures.close()
+    }
   }
 
   def evaluate(path: String, iteration: Int = 0): Unit = {
@@ -122,5 +152,14 @@ class Evaluator(val learner: NaiveBayesInfoGain, val instances: Instances) {
     statresults.write("STANDARD DEVIATION\n")
 
     statresults.close()
+  }
+}
+
+/* Evaluator Factory */
+object Evaluator {
+  def apply(filepath: String): Evaluator = {
+    val instances = DataSource.read(filepath)
+    instances.setClassIndex(instances.numAttributes - 1)
+    new Evaluator(new NaiveBayesInfoGain(instances.numClasses), instances)
   }
 }
