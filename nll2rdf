@@ -55,7 +55,28 @@ if ($cmd eq "gui") {
   print $fh join("\n", @configfile);
   close $fh;
 
+  # Check if there is something already
+  my $filldir = `ls ./models 2> /dev/null`;
+  $filldir .= `ls ./results 2> /dev/null`;
+
+  $filldir =~ s/^\s+|\s+$//g;
+
+  if($filldir) {
+    print STDERR "The models or results directory are not empty. The content will be overwritten.\n";
+    print STDERR "Do you wish to continue? [Y/n] ";
+    my $res;
+    do {
+      $res = <STDIN>;
+      chomp $res;
+      $res = "y" unless $res;
+      print STDERR "Please answer yes (Y) or no (N): " if ($res !~ m/^[Nn]o?$|^[Yy](es)?/);
+    } while ($res !~ m/^[Nn]o?$|^[Yy](es)?/);
+
+    exit if $res =~ m/^[Nn]/;
+  }
+
   # For auxiliary files
+  system "rm -rf /tmp/nll2rdf.tmp/* 2> /dev/null";
   mkdir "/tmp/nll2rdf.tmp";
 
   # For results, models and tagged instances

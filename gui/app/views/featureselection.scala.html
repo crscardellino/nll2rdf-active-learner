@@ -1,0 +1,84 @@
+@(features: Map[String, Iterator[String]], classes: Map[String, String])
+
+<form id="query-form" class="form-horizontal">
+  <div class="row">
+    @for(((classvalue, classname), idx) <- classes.toSeq.sortBy(_._1).zipWithIndex if idx < 4) {
+      <div class="col-md-3">
+        <div class="panel panel-primary">
+          <div class="panel-heading">
+            <h3 class="panel-title" style="height: 20px;">@classname</h3>
+          </div>
+          <div class="panel-body">
+            <div class="col-md-12">
+              <select id="@classvalue" class="form-control query-features" size="10" multiple>
+                @for(feature <- features(classvalue)){
+                <option value="@feature">@feature</option>
+                }
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+  <div class="row">
+    @for(((classvalue, classname), idx) <- classes.toSeq.sortBy(_._1).zipWithIndex if idx >= 4 & idx < 8) {
+    <div class="col-md-3">
+      <div class="panel panel-primary">
+        <div class="panel-heading">
+          <h3 class="panel-title" style="height: 20px;">@classname</h3>
+        </div>
+        <div class="panel-body">
+          <div class="col-md-12">
+            <select id="@classvalue" class="form-control query-features" size="10" multiple>
+              @for(feature <- features(classvalue)){
+              <option value="@feature">@feature</option>
+              }
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+    }
+  </div>
+  <div class="row">
+    @for(((classvalue, classname), idx) <- classes.toSeq.sortBy(_._1).zipWithIndex if idx >= 8 & idx < 12) {
+    <div class="col-md-3">
+      <div class="panel panel-primary">
+        <div class="panel-heading">
+          <h3 class="panel-title" style="height: 20px;">@classname</h3>
+        </div>
+        <div class="panel-body">
+          <div class="col-md-12">
+            <select id="@classvalue" class="form-control query-features" size="10" multiple>
+              @for(feature <- features(classvalue)){
+              <option value="@feature">@feature</option>
+              }
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+    }
+  </div>
+  <div class="row">
+    @for(((classvalue, classname), idx) <- classes.toSeq.sortBy(_._1).zipWithIndex if idx >= 12) {
+    <div class="col-md-3">
+      <div class="panel panel-primary">
+        <div class="panel-heading">
+          <h3 class="panel-title" style="height: 20px;">@classname</h3>
+        </div>
+        <div class="panel-body">
+          <div class="col-md-12">
+            <select id="@classvalue" class="form-control query-features" size="10" multiple>
+              @for(feature <- features(classvalue)){
+              <option value="@feature">@feature</option>
+              }
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+    }
+  </div>
+</form>

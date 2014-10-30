@@ -28,7 +28,7 @@ import weka.filters.supervised.attribute.AttributeSelection
 import weka.filters.unsupervised.attribute.MakeIndicator
 
 
-class NaiveBayesInfoGain(numClasses: Int, _rankerSize: Int = 100) extends AbstractClassifier {
+class NaiveBayesInfoGain(numClasses: Int, _rankerSize: Int = 50) extends AbstractClassifier {
   val classes: Array[String] = new Array(numClasses)
   val classifiers: Array[NaiveBayesMultinomial] = new Array(numClasses)
   val filters: Array[AttributeSelection] = new Array(numClasses)

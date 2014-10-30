@@ -29,7 +29,7 @@ import weka.filters.Filter
 import weka.filters.unsupervised.attribute.MakeIndicator
 
 
-class FeaturesFeedback(_instances: File, _rankerSize: Int = 100, _threshold: Double = 0.01) {
+class FeaturesFeedback(_instances: File, _rankerSize: Int = 50, _threshold: Double = 0.01) {
   val instances: Instances = DataSource.read(_instances.getCanonicalPath)
   instances.setClassIndex(instances.numAttributes - 1)
   val rankerSize: Int = _rankerSize
@@ -64,7 +64,7 @@ class FeaturesFeedback(_instances: File, _rankerSize: Int = 100, _threshold: Dou
 
       for ((feature, idx) <- filteredInstances.enumerateAttributes().zipWithIndex if idx < rankerSize) {
         featureFeedback.write(s"${feature.name}\n")
-     }
+      }
 
       featureFeedback.close()
     }

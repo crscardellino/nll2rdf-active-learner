@@ -3,7 +3,7 @@
 @extra_js = {
   <script type="text/javascript">
     $(window).load(function() {
-      $.get("train/" + @iteration,
+      $.get("/train/" + @iteration,
         {},
         function(data) {
           $("#results").empty();

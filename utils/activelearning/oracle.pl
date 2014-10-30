@@ -19,32 +19,42 @@
 use autodie qw/ open close /;
 use strict;
 use warnings;
+use File::Basename qw/ basename /;
 
 my $iteration = shift @ARGV;
 die "The iteration number is incorrect" unless defined $iteration;
 
 my $out = shift @ARGV;
-die "The out option must but 'mixed' or 'annotated'" unless defined $iteration and ($itereation eq "mixed" or $iteration eq "annotated");
+die "The out option must but 'mixed' or 'annotated'" unless defined $out and ($out eq "mixed" or $out eq "annotated");
 
 my $filter = shift @ARGV;
 $filter = 0 unless defined $filter;
 
-print STDERR "Creating data file with initial corpus and oracle annotation";
+print STDERR "Creating data file with initial corpus and oracle annotation\n";
 
 my @annotated = `cat /tmp/nll2rdf.tmp/annotated.data`;
+die if ($? >> 8) != 0;
 chomp @annotated;
 
 open(my $oh, ">", "/tmp/nll2rdf.tmp/$out.data");
 
 # We first move the content of the annotated file to the outfile
-foreach $line(@annotated) {
-  print $oh $line;
+foreach my $line(@annotated) {
+  print $oh $line . "\n";
 }
 
-my @instances = "find /tmp/nll2rdf.tmp/instances/iteration$iteration/tagged -type f";
+my @instances = `find /tmp/nll2rdf.tmp/instances/iteration$iteration/tagged -type f`;
+die if ($? >> 8) != 0;
 chomp @instances;
 
-foreach my $instance(@instances) {
+# For the final annotated data (only in annotated out)
+my @set_of_features = `cat /tmp/nll2rdf.tmp/features/features.$iteration.txt`;
+die if ($? >> 8) != 0;
+chomp @set_of_features;
+my %set_of_features = map { $_ => 1 } @set_of_features;
+
+foreach my $instance_file(@instances) {
+  my $instance = basename $instance_file;
   $instance =~ m/^([^A-Z]+)\.([A-Z\-]+)\.txt$/;
   my $instance_name = $1;
   my $class_name = $2;
@@ -55,11 +65,17 @@ foreach my $instance(@instances) {
   pop @data;
 
   # Preprocess of the instance to make it monolabel
-  my @featuresfilter = `cat /tmp/nll2rdf.tmp/features/filter.$class.$iteration.txt`;
+  my @featuresfilter = `cat /tmp/nll2rdf.tmp/features/filter.$class_name.$iteration.txt`;
+  die if ($? >> 8) != 0;
   chomp @featuresfilter;
   my %featuresfilter = map { $_ => 1 } @featuresfilter;
 
   my @processeddata = grep { !exists $featuresfilter{$_} } @data;
+
+  # This is for the retrain version. Only take in consideration the final set of selected features (with feedback)
+  if($out eq "annotated") {
+    @processeddata = grep { exists $set_of_features{$_} } @processeddata;
+  }
 
   print $oh join(",", @processeddata) . ",$class_name\n" if scalar(@processeddata) > 0;
 }
@@ -68,7 +84,7 @@ close $oh;
 
 # Collect the features of the data file
 
-print STDERR "Creating arff file with initial corpus and oracle annotation";
+print STDERR "Creating arff file with initial corpus and oracle annotation\n";
 
 open($oh, "<" , "/tmp/nll2rdf.tmp/$out.data");
 my %featureset = ();
@@ -114,7 +130,7 @@ while(<$oh>) {
   my $class = pop @line;
 
   foreach my $feature (@line) {
-    $setoffeatures{$feature} += 1 if exists $setoffeatures{$word};
+    $setoffeatures{$feature} += 1 if exists $setoffeatures{$feature};
   }
 
   foreach my $feature (sort keys %setoffeatures) {

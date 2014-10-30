@@ -8,14 +8,14 @@
   <table class="table">
     <thead>
       <tr>
-        <th>Accuracy</th>
-        <th>Kappa</th>
+        <th class="col-md-6">Accuracy</th>
+        <th class="col-md-6">Kappa</th>
       </tr>
     </thead>
     <tbody>
       <tr>
-        <td>@accAndKappa.accuracy</td>
-        <td>@accAndKappa.kappa</td>
+        <td class="text-right">@accAndKappa.accuracy</td>
+        <td class="text-right">@accAndKappa.kappa</td>
       </tr>
     </tbody>
   </table>
@@ -38,9 +38,9 @@
       @for(result <- results) {
         <tr>
           <td>@result.id</td>
-          <td>@result.precision</td>
-          <td>@result.recall</td>
-          <td>@result.fMeasure</td>
+          <td class="text-right">@result.precision</td>
+          <td class="text-right">@result.recall</td>
+          <td class="text-right">@result.fMeasure</td>
         </tr>
       }
       </tbody>
@@ -64,9 +64,9 @@
       @for(result <- statResults) {
         <tr>
           <td>@result.id</td>
-          <td>@result.precision</td>
-          <td>@result.recall</td>
-          <td>@result.fMeasure</td>
+          <td class="text-right">@result.precision</td>
+          <td class="text-right">@result.recall</td>
+          <td class="text-right">@result.fMeasure</td>
         </tr>
       }
       </tbody>
@@ -88,20 +88,20 @@
       </thead>
       <tbody>
       <tr>
-        @if(accAndKappa.accuracy - oldAccAndKappa.accuracy > 0) {
-          <td class="success">@accAndKappa.accuracy (+@{accAndKappa.accuracy - oldAccAndKappa.accuracy})</td>
-        } else { @if(accAndKappa.accuracy - oldAccAndKappa.accuracy < 0) {
-          <td class="danger">@accAndKappa.accuracy (-@{accAndKappa.accuracy - oldAccAndKappa.accuracy})</td>
+        @if(accAndKappa.accuracy - oldAccAndKappa.accuracy >= 0.01) {
+          <td class="success text-right">@accAndKappa.accuracy (+@{"%.2f".format(accAndKappa.accuracy - oldAccAndKappa.accuracy)})</td>
+        } else { @if(accAndKappa.accuracy - oldAccAndKappa.accuracy <= -0.01) {
+          <td class="danger text-right">@accAndKappa.accuracy (@{"%.2f".format(accAndKappa.accuracy - oldAccAndKappa.accuracy)})</td>
         } else {
-          <td>@accAndKappa.accuracy</td>
+          <td class="text-right">@accAndKappa.accuracy</td>
         }}
 
-        @if(accAndKappa.kappa - oldAccAndKappa.kappa > 0) {
-          <td class="success">@accAndKappa.kappa (+@{accAndKappa.kappa - oldAccAndKappa.kappa})</td>
-        } else { @if(accAndKappa.kappa - oldAccAndKappa.kappa < 0) {
-          <td class="danger">@accAndKappa.kappa (-@{accAndKappa.kappa - oldAccAndKappa.kappa})</td>
+        @if(accAndKappa.kappa - oldAccAndKappa.kappa >= 0.01) {
+          <td class="success text-right">@accAndKappa.kappa (+@{"%.2f".format(accAndKappa.kappa - oldAccAndKappa.kappa)})</td>
+        } else { @if(accAndKappa.kappa - oldAccAndKappa.kappa <= -0.01) {
+          <td class="danger text-right">@accAndKappa.kappa (@{"%.2f".format(accAndKappa.kappa - oldAccAndKappa.kappa)})</td>
         } else {
-          <td>@accAndKappa.kappa</td>
+          <td class="text-right">@accAndKappa.kappa</td>
         }}
       </tr>
       </tbody>
@@ -110,8 +110,8 @@
 </div>
 
 <div class="row">
-  <div class="col-md-12 text-center">
-    <h4>Classes Results</h4>
+  <div class="col-md-6 col-md-offset-3">
+    <h4 class="text-center">Classes Results</h4>
     <table class="table">
       <thead>
       <tr>
@@ -125,28 +125,28 @@
       @for((result, idx) <- results.zipWithIndex) {
       <tr>
         <td>@result.id</td>
-        @if(result.precision - oldResults(idx).precision > 0) {
-          <td class="success">@result.precision (+@{result.precision - oldResults(idx).precision})</td>
-        } else { @if(result.precision - oldResults(idx).precision < 0) {
-          <td class="danger">@result.precision (-@{result.precision - oldResults(idx).precision})</td>
+        @if(result.precision - oldResults(idx).precision >= 0.01) {
+          <td class="success text-right">@result.precision (+@{"%.2f".format(result.precision - oldResults(idx).precision)})</td>
+        } else { @if(result.precision - oldResults(idx).precision <= -0.01) {
+          <td class="danger text-right">@result.precision (@{"%.2f".format(result.precision - oldResults(idx).precision)})</td>
         } else {
-          <td>@result.precision</td>
+          <td class="text-right">@result.precision</td>
         }}
 
-        @if(result.recall - oldResults(idx).recall > 0) {
-          <td class="success">@result.recall (+@{result.recall - oldResults(idx).recall})</td>
-        } else { @if(result.recall - oldResults(idx).recall < 0) {
-          <td class="danger">@result.recall (-@{result.recall - oldResults(idx).recall})</td>
+        @if(result.recall - oldResults(idx).recall >= 0.01) {
+          <td class="success text-right">@result.recall (+@{"%.2f".format(result.recall - oldResults(idx).recall)})</td>
+        } else { @if(result.recall - oldResults(idx).recall <= -0.01) {
+          <td class="danger text-right">@result.recall (@{"%.2f".format(result.recall - oldResults(idx).recall)})</td>
         } else {
-          <td>@result.recall</td>
+          <td class="text-right">@result.recall</td>
         }}
 
-        @if(result.fMeasure - oldResults(idx).precision > 0) {
-          <td class="success">@result.precision (+@{result.precision - oldResults(idx).precision})</td>
-        } else { @if(result.precision - oldResults(idx).precision < 0) {
-          <td class="danger">@result.precision (-@{result.precision - oldResults(idx).precision})</td>
+        @if(result.fMeasure - oldResults(idx).fMeasure >= 0.01) {
+          <td class="success text-right">@result.fMeasure (+@{"%.2f".format(result.fMeasure - oldResults(idx).fMeasure)})</td>
+        } else { @if(result.fMeasure - oldResults(idx).fMeasure <= -0.01) {
+          <td class="danger text-right">@result.fMeasure (@{"%.2f".format(result.fMeasure - oldResults(idx).fMeasure)})</td>
         } else {
-          <td>@result.precision</td>
+          <td class="text-right">@result.fMeasure</td>
         }}
       </tr>
       }
@@ -156,8 +156,8 @@
 </div>
 
 <div class="row">
-  <div class="col-md-12 text-center">
-    <h4>Results Statistics</h4>
+  <div class="col-md-6 col-md-offset-3">
+    <h4 class="text-center">Results Statistics</h4>
     <table class="table">
       <thead>
       <tr>
@@ -171,28 +171,28 @@
       @for((result, idx) <- statResults.zipWithIndex) {
       <tr>
         <td>@result.id</td>
-        @if(result.precision - oldStatResults(idx).precision > 0) {
-          <td class="success">@result.precision (+@{result.precision - oldStatResults(idx).precision})</td>
-        } else { @if(result.precision - oldStatResults(idx).precision < 0) {
-          <td class="danger">@result.precision (-@{result.precision - oldStatResults(idx).precision})</td>
+        @if(result.precision - oldStatResults(idx).precision >= 0.01) {
+          <td class="success text-right">@result.precision (+@{"%.2f".format(result.precision - oldStatResults(idx).precision)})</td>
+        } else { @if(result.precision - oldStatResults(idx).precision <= -0.01) {
+          <td class="danger text-right">@result.precision (@{"%.2f".format(result.precision - oldStatResults(idx).precision)})</td>
         } else {
-          <td>@result.precision</td>
+          <td class="text-right">@result.precision</td>
         }}
 
-        @if(result.recall - oldStatResults(idx).recall > 0) {
-          <td class="success">@result.recall (+@{result.recall - oldStatResults(idx).recall})</td>
-        } else { @if(result.recall - oldStatResults(idx).recall < 0) {
-          <td class="danger">@result.recall (-@{result.recall - oldStatResults(idx).recall})</td>
+        @if(result.recall - oldStatResults(idx).recall >= 0.01) {
+          <td class="success text-right">@result.recall (+@{"%.2f".format(result.recall - oldStatResults(idx).recall)})</td>
+        } else { @if(result.recall - oldStatResults(idx).recall <= -0.01) {
+          <td class="danger text-right">@result.recall (@{"%.2f".format(result.recall - oldStatResults(idx).recall)})</td>
         } else {
-          <td>@result.recall</td>
+          <td class="text-right">@result.recall</td>
         }}
 
-        @if(result.fMeasure - oldStatResults(idx).precision > 0) {
-          <td class="success">@result.precision (+@{result.precision - oldStatResults(idx).precision})</td>
-        } else { @if(result.precision - oldStatResults(idx).precision < 0) {
-          <td class="danger">@result.precision (-@{result.precision - oldStatResults(idx).precision})</td>
+        @if(result.fMeasure - oldStatResults(idx).fMeasure >= 0.01) {
+          <td class="success text-right">@result.fMeasure (+@{"%.2f".format(result.fMeasure - oldStatResults(idx).fMeasure)})</td>
+        } else { @if(result.fMeasure - oldStatResults(idx).fMeasure <= -0.01) {
+          <td class="danger text-right">@result.fMeasure (@{"%.2f".format(result.fMeasure - oldStatResults(idx).fMeasure)})</td>
         } else {
-          <td>@result.precision</td>
+          <td class="text-right">@result.fMeasure</td>
         }}
       </tr>
       }

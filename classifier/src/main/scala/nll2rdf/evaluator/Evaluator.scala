@@ -72,7 +72,7 @@ class Evaluator(val learner: NaiveBayesInfoGain, val instances: Instances) {
     }
   }
 
-  def evaluate(path: String, iteration: Int = 0): Unit = {
+  def evaluate(path: String, iteration: Int): Unit = {
     evaluation.crossValidateModel(learner, instances, 10, new Random(0))
 
     val results: PrintWriter = new PrintWriter(

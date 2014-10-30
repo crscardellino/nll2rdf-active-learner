@@ -9,7 +9,6 @@ import org.apache.commons.io.FileUtils
 import play.api.Logger
 import play.api.Play
 import play.api.Play.current
-import play.api.cache.Cache
 import play.api.data.Form
 import play.api.data.Forms._
 import play.api.libs.json._
@@ -43,7 +42,7 @@ object ActiveLearner extends Controller {
     mapping(
       "queries" -> default(number, 5),
       "tagfilter" -> default(number, 0),
-      "untagfilter" -> default(number, 25),
+      "untagfilter" -> default(number, 50),
       "typelearning" -> nonEmptyText
     )(LearnerForm.apply)(LearnerForm.unapply)
   )
@@ -76,12 +75,12 @@ object ActiveLearner extends Controller {
     Future {
       val json: JsValue = request.body
       val settings: JsValue = Json.parse(Source.fromFile("/tmp/nll2rdf.tmp/settings.json").getLines().next)
-      val queries: Set[String] = Cache.get("queries").map(_.asInstanceOf[Set[String]]).getOrElse(sys.error("Queries not set"))
+      val queries: Array[String] = Source.fromFile("/tmp/nll2rdf.tmp/queries.txt").getLines().next.split(',')
 
-      for(query <- queries) {
+      for (query <- queries) {
         val file: File = new File(s"/tmp/nll2rdf.tmp/instances/iteration$iteration/$query.txt")
 
-        for(classname <- (json \ query).as[List[String]]) {
+        for (classname <- (json \ query).as[List[String]]) {
           val newfile: File = new File(s"/tmp/nll2rdf.tmp/instances/iteration$iteration/tagged/$query.$classname.txt")
           FileUtils.copyFile(file, newfile)
         }
@@ -93,11 +92,12 @@ object ActiveLearner extends Controller {
         val oraclecmd: String = s"perl $basedir/utils/activelearning/oracle.pl $iteration mixed $filter"
 
         runProcess(filteringcmd).flatMap(_ => runProcess(oraclecmd)) map { _ =>
+          Logger.debug("Feature selection for oracle feedback")
           val featuresFeedback: FeaturesFeedback = new FeaturesFeedback(new File(s"/tmp/nll2rdf.tmp/mixed.arff"))
 
           featuresFeedback.feedback("/tmp/nll2rdf.tmp/features", iteration)
 
-          Ok("OK")
+          Ok(Json.obj("message" -> "OK"))
         } getOrElse {
           InternalServerError("Error processing the annotated examples")
         }
@@ -107,8 +107,72 @@ object ActiveLearner extends Controller {
     }
   }
 
+  def features(iteration: Int) = Action {
+    Ok(views.html.features(iteration))
+  }
+
+  def featuresFeedback(iteration: Int) = Action.async(BodyParsers.parse.json) { request =>
+    Future {
+      val json: JsValue = request.body
+
+      for(classname <- classes.keys) {
+        val features: List[String] = for(feature <- (json \ classname).as[List[String]]) yield feature
+
+        val feedbackFile: PrintWriter = new PrintWriter(
+          new File(s"/tmp/nll2rdf.tmp/features/feedback.$classname.$iteration.txt")
+        )
+
+        feedbackFile.write(features.mkString("\n"))
+
+        feedbackFile.close()
+      }
+
+      Ok(Json.obj("message" -> "OK"))
+    }
+  }
+
+  def listFeatures(iteration: Int) = Action.async {
+    Future {
+      Play.current.configuration.getString("learner.basedir") map { basedir =>
+        val features: Map[String, Iterator[String]] =
+          (for(classvalue <- classes.keySet.toSeq.sorted) yield {
+            val listOfFeatures: Iterator[String] = Source
+                .fromFile(s"/tmp/nll2rdf.tmp/features/feedback.$classvalue.$iteration.txt")
+                .getLines()
+
+            (classvalue, listOfFeatures)
+          }).toMap
+
+        Ok(views.html.featureselection(features, classes))
+      } getOrElse {
+        InternalServerError("The base directory of the learner couldn't be established")
+      }
+    }
+  }
+
   def makeQueries(iteration: Int) = Action {
     Ok(views.html.query(iteration))
+  }
+
+  def noFeedbackRetrain(iteration: Int) = Action { implicit request =>
+    val settings: JsValue = Json.parse(Source.fromFile("/tmp/nll2rdf.tmp/settings.json").getLines().next)
+
+    Play.current.configuration.getString("learner.basedir") map { basedir =>
+      val filter: Int = (settings \ "tagfilter").as[Int]
+      val filteringcmd: String = s"perl $basedir/utils/activelearning/filtering.pl $iteration"
+      val oraclecmd: String = s"perl $basedir/utils/activelearning/oracle.pl $iteration annotated $filter"
+
+      runProcess(filteringcmd).flatMap(_ => runProcess(oraclecmd)) map { _ =>
+        Logger.debug("Saving annotated corpus arff file")
+        FileUtils.copyFile(new File("/tmp/nll2rdf.tmp/annotated.arff"), new File(s"$basedir/models/iteration${iteration+1}.arff"))
+
+        Ok(views.html.results(iteration + 1))
+      } getOrElse {
+        InternalServerError("There was a problem processing the corpus")
+      }
+    } getOrElse {
+      InternalServerError("The base directory of the learner couldn't be established")
+    }
   }
 
   def queryInstances(iteration: Int) = Action.async {
@@ -134,7 +198,11 @@ object ActiveLearner extends Controller {
 
           val queries: MMap[String, String] = MMap()
 
-          Cache.set("queries", queriesSelection.queries.queries.keySet)
+          val queryFile: PrintWriter = new PrintWriter(
+            new File("/tmp/nll2rdf.tmp/queries.txt")
+          )
+          queryFile.write(queriesSelection.queries.queries.keySet.mkString(","))
+          queryFile.close()
 
           for (query <- queriesSelection.queries.queries.keys) {
             val filename: String = s"/tmp/nll2rdf.tmp/instances/$file/$query.txt"
@@ -150,6 +218,29 @@ object ActiveLearner extends Controller {
       } getOrElse {
         InternalServerError("The base directory of the learner couldn't be established")
       }
+    }
+  }
+
+  def retrain(iteration: Int, feedbackSize: Int = 10) = Action { implicit request =>
+    val settings: JsValue = Json.parse(Source.fromFile("/tmp/nll2rdf.tmp/settings.json").getLines().next)
+
+    Play.current.configuration.getString("learner.basedir") map { basedir =>
+      val filter: Int = (settings \ "tagfilter").as[Int]
+      val feedbackcmd: String = s"perl $basedir/utils/activelearning/setfeedbackfeatures.pl $iteration $feedbackSize"
+      val filteringcmd: String = s"perl $basedir/utils/activelearning/filtering.pl $iteration"
+      val oraclecmd: String = s"perl $basedir/utils/activelearning/oracle.pl $iteration annotated $filter"
+
+      runProcess(feedbackcmd).flatMap(_ => runProcess(filteringcmd))
+          .flatMap(_ => runProcess(oraclecmd)) map { _ =>
+        Logger.debug("Saving annotated corpus arff file")
+        FileUtils.copyFile(new File("/tmp/nll2rdf.tmp/annotated.arff"), new File(s"$basedir/models/iteration${iteration+1}.arff"))
+
+        Ok(views.html.results(iteration + 1))
+      } getOrElse {
+        InternalServerError("There was a problem processing the corpus")
+      }
+    } getOrElse {
+      InternalServerError("The base directory of the learner couldn't be established")
     }
   }
 
@@ -198,10 +289,6 @@ object ActiveLearner extends Controller {
     }
   }
 
-  def test = Action {
-    Ok(views.html.query(0))
-  }
-
   def trainAndEvaluateCorpus(iteration: Int) = Action.async { implicit request =>
     Future {
       Play.current.configuration.getString("learner.basedir") map { basedir =>
@@ -215,10 +302,10 @@ object ActiveLearner extends Controller {
         evaluator.trainAndSaveModel(s"$basedir/models/$file.model")
 
         Logger.debug("Saving model features")
-        evaluator.saveModelFeatures(s"/tmp/nll2rdf.tmp/features/", 0)
+        evaluator.saveModelFeatures(s"/tmp/nll2rdf.tmp/features/", iteration)
 
         Logger.debug("Model evaluation")
-        evaluator.evaluate(s"$basedir/results/")
+        evaluator.evaluate(s"$basedir/results/", iteration)
 
         Logger.debug("Getting evaluation results")
         val results: Array[EvaluationResults] = getResults(s"$basedir/results/generalresults.$iteration.txt")
