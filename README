@@ -1,0 +1,45 @@
+Natural Language Licenses to RDF
+--------------------------------
+
+Text clasification tool for transforming natural language licenses to ODRL RDF
+data.
+
+NLL2RDF Active Learner Copyright (C) 2014 Cristian A. Cardellino This program
+comes with ABSOLUTELY NO WARRANTY. 
+This is free software, and you are welcome to redistribute it under certain
+conditions. See LICENSE for details, or visit
+<http://www.gnu.org/licenses/gpl.html>.
+
+
+Requirements:
+-------------
+
+- Java JRE 1.7
+- Unix OS (Linux or OSX): This program uses many scripts with access
+  to many unix programs and functions and is not suitable for a
+  Windows environment.
+- Perl interpreter (should exists in any modern Unix OS)
+
+Perl:
+-----
+
+The OS Perl should be more than enough to run this program. If there are any
+complications, I suggest you to install perlbrew and perl 5.18.4 or above and
+use that version. Visit <http://perlbrew.pl/> for information on this
+installation.
+
+
+Usage:
+------
+
+To start the server you should run `perl nll2rdf gui` or give the nll2rdf
+script execution permissions and run `./nll2rdf gui`.
+
+You should wait until the console runs the application server (the first time
+can take a while since it has to download and compile all the required
+libraries).
+
+Once the console is ready, open a browser (Google Chrome has been the one
+tested) and go to <http://localhost:3000/>. For the data (the tagged and
+untagged corpus), there should be two tar.xz files in the "data" directory,
+those are the files you should upload.
