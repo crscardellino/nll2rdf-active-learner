@@ -19,6 +19,7 @@ Requirements:
   to many unix programs and functions and is not suitable for a
   Windows environment.
 - Perl interpreter (should exists in any modern Unix OS)
+- NLL2RDF java library
 
 Perl:
 -----
@@ -28,6 +29,26 @@ complications, I suggest you to install perlbrew and perl 5.18.4 or above and
 use that version. Visit <http://perlbrew.pl/> for information on this
 installation.
 
+NLL2RDF Java Library:
+--------------------
+
+This jar library should be compiled and existing in the `./gui/lib/` directory.
+In order to do it you have two options, compile it yourself or download it. The
+download link can be found at
+<https://bitbucket.org/crscardellino/nll2rdf-active-learner/downloads/nll2rdf.jar>
+
+Once downloaded copy it to the `./gui/lib/` directory.
+
+If you choose to compile it yourself you will need to have `sbt` installed in
+your system, please visit <http://www.scala-sbt.org/> for information on
+installing it.
+
+Once you have installed it, you should move to the `./classifier/` directory,
+and then run the following command: `sbt clean compile assembly`.
+
+The compilation may take some time depending on your internet connection. Once
+it is complete, you should copy the final jar file to the `./gui/lib/`
+directory like so: `cp ./classifier/target/scala-2.11/nll2rdf.jar ../gui/lib/`
 
 Usage:
 ------
