@@ -250,8 +250,8 @@ object ActiveLearner extends Controller {
         untaggedcorpus <- request.body.file("untaggedcorpus")
       } yield (taggedcorpus, untaggedcorpus)) map {
       case (taggedcorpus, untaggedcorpus) =>
-        taggedcorpus.ref.moveTo(new File("/tmp/nll2rdf.tmp/taggedcorpus.tar.xz"))
-        untaggedcorpus.ref.moveTo(new File("/tmp/nll2rdf.tmp/untaggedcorpus.tar.xz"))
+        taggedcorpus.ref.moveTo(new File("/tmp/nll2rdf.tmp/taggedcorpus.tar.bz2"))
+        untaggedcorpus.ref.moveTo(new File("/tmp/nll2rdf.tmp/untaggedcorpus.tar.bz2"))
 
         val data = learnerForm.bindFromRequest.get
         val settingsJson: JsValue = Json.obj(

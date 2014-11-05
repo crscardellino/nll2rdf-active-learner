@@ -24,9 +24,9 @@ mkdir "/tmp/nll2rdf.tmp/features";
 mkdir "/tmp/nll2rdf.tmp/instances";
 
 mkdir "/tmp/nll2rdf.tmp/taggedcorpus";
-my $rc = system "tar Jxf /tmp/nll2rdf.tmp/taggedcorpus.tar.xz -C /tmp/nll2rdf.tmp/taggedcorpus";
+my $rc = system "tar xf /tmp/nll2rdf.tmp/taggedcorpus.tar.bz2 -C /tmp/nll2rdf.tmp/taggedcorpus";
 die if ($rc >> 8) != 0;
 
 mkdir "/tmp/nll2rdf.tmp/untaggedcorpus";
-$rc = system "tar Jxf /tmp/nll2rdf.tmp/untaggedcorpus.tar.xz -C /tmp/nll2rdf.tmp/untaggedcorpus";
+$rc = system "tar xf /tmp/nll2rdf.tmp/untaggedcorpus.tar.bz2 -C /tmp/nll2rdf.tmp/untaggedcorpus";
 die if ($rc >> 8) != 0;
