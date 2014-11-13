@@ -43,7 +43,7 @@ foreach my $line(@annotated) {
   print $oh $line . "\n";
 }
 
-my @instances = `find /tmp/nll2rdf.tmp/instances/iteration$iteration/tagged -type f`;
+my @instances = `find /tmp/nll2rdf.tmp/instances/iteration$iteration -type f`;
 die if ($? >> 8) != 0;
 chomp @instances;
 

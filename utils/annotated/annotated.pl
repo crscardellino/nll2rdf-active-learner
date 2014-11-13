@@ -102,14 +102,14 @@ foreach my $file(@corpusfiles) {
     $featureset{$skipgram} += 1;
   }
 
-  # Print biskiptrigram (if any)
+  # Print triskipbigram (if any)
   for my $i (0 .. (scalar(@unigrams) - 5)) {
     my $skipgram = $unigrams[$i] . ";" . $unigrams[$i+4];
     print $dh "," . $skipgram;
     $featureset{$skipgram} += 1;
   }
 
-  # uniskiptrigram
+  # Print uniskiptrigram (if any)
   for my $i (0 .. scalar(@unigrams) - 5) {
     my $skipgram = $unigrams[$i] . ";" . $unigrams[$i+2] . ";" . $unigrams[$i+4];
     print $dh "," . $skipgram;
