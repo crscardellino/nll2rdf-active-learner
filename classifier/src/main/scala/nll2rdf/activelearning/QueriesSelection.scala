@@ -18,12 +18,11 @@
 
 package nll2rdf.activelearning
 
-import java.io.File
-
+import java.io.{PrintWriter, File}
 import nll2rdf.classifiers.NaiveBayesInfoGain
+import scala.io.Source
 import weka.core.{DenseInstance, Instances}
 import weka.core.converters.ConverterUtils.DataSource
-import scala.io.Source
 
 class QueriesSelection(val csv_file: File, arff: File, model: File,
                        queries_size: Int = 5) {
@@ -69,5 +68,25 @@ class QueriesSelection(val csv_file: File, arff: File, model: File,
     }
 
     Console.err.println()
+  }
+}
+
+object QueriesSelection {
+  def main(args: Array[String]) {
+    val csv_file: File = new File(args(0))
+    val arff: File = new File(args(1))
+    val model: File = new File(args(2))
+    val queries: File = new File(args(3))
+    val queries_size: Int =
+      if (args.length > 4) args(4).toInt
+      else 5
+
+    val queriesSelection = new QueriesSelection(csv_file, arff, model, queries_size)
+
+    queriesSelection.query()
+
+    val queryFile: PrintWriter = new PrintWriter(queries)
+    queryFile.write(queriesSelection.queries.queries.keySet.mkString(","))
+    queryFile.close()
   }
 }

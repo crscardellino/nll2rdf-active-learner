@@ -23,17 +23,17 @@ import scala.collection.mutable.{Map => MMap}
 class QueriesSet(val size: Int) {
   val queries: MMap[String, Double] = MMap()
 
-  private def max: Double = queries.maxBy(_._2)._2
+  private def min: Double = queries.minBy(_._2)._2
 
-  private def maxQuery: String = queries.maxBy(_._2)._1
+  private def minQuery: String = queries.minBy(_._2)._1
 
   private def checkFit(value: Double): Boolean =
-    queries.size < size || value < max
+    queries.size < size || value > min
 
   def addValue(instanceid: String, value: Double) {
     if (checkFit(value)) {
       if (queries.size + 1 > size)
-        queries -= maxQuery
+        queries -= minQuery
 
       queries += instanceid -> value
     }
