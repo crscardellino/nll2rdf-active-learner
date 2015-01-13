@@ -33,11 +33,7 @@ NLL2RDF Java Library:
 --------------------
 
 This jar library should be compiled and existing in the `./gui/lib/` directory.
-In order to do it you have two options, compile it yourself or download it. The
-download link can be found at
-<https://bitbucket.org/crscardellino/nll2rdf-active-learner/downloads/nll2rdf.jar>
-
-Once downloaded copy it to the `./gui/lib/` directory.
+If not, you can compile it yourself.
 
 If you choose to compile it yourself you will need to have `sbt` installed in
 your system, please visit <http://www.scala-sbt.org/> for information on
