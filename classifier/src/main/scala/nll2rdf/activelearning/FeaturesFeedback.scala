@@ -19,13 +19,13 @@
 package nll2rdf.activelearning
 
 import java.io.{File, PrintWriter}
-import weka.filters.supervised.attribute.AttributeSelection
-
 import scala.collection.JavaConversions._
+import scala.io.Source
 import weka.attributeSelection.{InfoGainAttributeEval, Ranker}
 import weka.core.Instances
 import weka.core.converters.ConverterUtils.DataSource
 import weka.filters.Filter
+import weka.filters.supervised.attribute.AttributeSelection
 import weka.filters.unsupervised.attribute.MakeIndicator
 
 
@@ -58,11 +58,14 @@ class FeaturesFeedback(_instances: File, _rankerSize: Int = 50, _threshold: Doub
 
       val filteredInstances: Instances = Filter.useFilter(newInstances, filter)
 
+      val existingFeatures: Array[String] = Source.fromFile(s"$path/features.$classname.$iteration.txt").getLines().toArray
+
       val featureFeedback: PrintWriter = new PrintWriter(
         new File(s"$path/feedback.$classname.$iteration.txt")
       )
 
-      for ((feature, idx) <- filteredInstances.enumerateAttributes().zipWithIndex if idx < rankerSize) {
+      for ((feature, idx) <- filteredInstances.enumerateAttributes().zipWithIndex
+           if idx < rankerSize & !existingFeatures.contains(feature.name)) {
         featureFeedback.write(s"${feature.name}\n")
       }
 

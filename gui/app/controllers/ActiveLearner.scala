@@ -1,7 +1,7 @@
 package controllers
 
 import forms.LearnerForm
-import java.io.{PrintWriter, File}
+import java.io.{File, FileOutputStream, PrintWriter}
 import models._
 import nll2rdf.activelearning.{QueriesSelection,FeaturesFeedback}
 import nll2rdf.evaluator.Evaluator
@@ -77,16 +77,18 @@ object ActiveLearner extends Controller {
       val settings: JsValue = Json.parse(Source.fromFile("/tmp/nll2rdf.tmp/settings.json").getLines().next)
       val queries: Array[String] = Source.fromFile("/tmp/nll2rdf.tmp/queries.txt").getLines().next.split(',')
 
-      for (query <- queries) {
-        val file: File = new File(s"/tmp/nll2rdf.tmp/instances/iteration$iteration/$query.txt")
-
-        for (classname <- (json \ query).as[List[String]]) {
-          val newfile: File = new File(s"/tmp/nll2rdf.tmp/instances/iteration$iteration/tagged/$query.$classname.txt")
-          FileUtils.copyFile(file, newfile)
-        }
-      }
-
       Play.current.configuration.getString("learner.basedir") map { basedir =>
+        for (query <- queries) {
+          val file: File = new File(s"/tmp/nll2rdf.tmp/instances/$query.txt")
+
+          for (classname <- (json \ query).as[List[String]]) {
+            val newfile: File = new File(s"/tmp/nll2rdf.tmp/instances/iteration$iteration/$query.$classname.txt")
+            val savefile: File = new File(s"$basedir/models/tagged/$query.$classname.txt")
+            FileUtils.copyFile(file, newfile)
+            FileUtils.copyFile(file, savefile)
+          }
+        }
+
         val filter: Int = (settings \ "tagfilter").as[Int]
         val filteringcmd: String = s"perl $basedir/utils/activelearning/filtering.pl $iteration"
         val oraclecmd: String = s"perl $basedir/utils/activelearning/oracle.pl $iteration mixed $filter"
@@ -186,13 +188,17 @@ object ActiveLearner extends Controller {
         val queries_size: Int = (settings \ "queries_size").as[Int]
 
         val cmd: String = s"perl $basedir/utils/unannotated/unannotated.pl " +
-            s"/tmp/nll2rdf.tmp/untaggedcorpus/conll-corpus ${arff.getCanonicalPath} " +
-            s"$iteration $filter"
+            s"${arff.getCanonicalPath} $iteration $filter"
+
+        Logger.debug("Getting data from unannotated instances")
 
         runProcess(cmd) map { _ =>
           val csv_file: File = new File(s"/tmp/nll2rdf.tmp/unannotated.csv")
+          val annotated_queries_files: File = new File(s"/tmp/nll2rdf.tmp/tagged_instances.txt")
 
-          val queriesSelection = new QueriesSelection(csv_file, arff, model, queries_size)
+          val queriesSelection: QueriesSelection = new QueriesSelection(csv_file, arff, model, queries_size)
+
+          Logger.debug("Querying using Active Learning")
 
           queriesSelection.query()
 
@@ -204,8 +210,18 @@ object ActiveLearner extends Controller {
           queryFile.write(queriesSelection.queries.queries.keySet.mkString(","))
           queryFile.close()
 
+          val annotatedQueries: PrintWriter = new PrintWriter(
+            new FileOutputStream(annotated_queries_files, true)
+          )
+
+          annotatedQueries.write(
+            queriesSelection.queries.queries.keySet.mkString("\n") + "\n"
+          )
+
+          annotatedQueries.close()
+
           for (query <- queriesSelection.queries.queries.keys) {
-            val filename: String = s"/tmp/nll2rdf.tmp/instances/$file/$query.txt"
+            val filename: String = s"/tmp/nll2rdf.tmp/instances/$query.txt"
             val query_value: String = Source.fromFile(filename).getLines.next()
 
             queries += (query -> query_value)
@@ -270,10 +286,16 @@ object ActiveLearner extends Controller {
           val setupcmd: String = s"perl $basedir/utils/config/setupcorpus.pl"
           val annotatedcmd: String = s"perl $basedir/utils/annotated/annotated.pl " +
               s"/tmp/nll2rdf.tmp/taggedcorpus/licenses-conll-format/ ${data.tagfilter}"
+          val preprocesscmd: String = s"perl $basedir/utils/unannotated/preprocess.pl " +
+              s"/tmp/nll2rdf.tmp/untaggedcorpus/conll-corpus/"
 
           Logger.debug("Creating annotated corpus arff file")
 
-          runProcess(setupcmd).flatMap(_ => runProcess(annotatedcmd)) map { _ =>
+          runProcess(setupcmd).flatMap(_ => runProcess(annotatedcmd))
+              .flatMap { _ =>
+            Logger.debug("Preprocessing unannotated corpus. Getting the unannotated instances.")
+            runProcess(preprocesscmd)
+          } map { _ =>
             Logger.debug("Saving annotated corpus arff file")
             FileUtils.copyFile(new File("/tmp/nll2rdf.tmp/annotated.arff"), new File(s"$basedir/models/iteration0.arff"))
 

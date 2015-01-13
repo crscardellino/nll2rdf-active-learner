@@ -162,4 +162,19 @@ object Evaluator {
     instances.setClassIndex(instances.numAttributes - 1)
     new Evaluator(new NaiveBayesInfoGain(instances.numClasses), instances)
   }
+
+  def main(args: Array[String]) {
+    val arff_file: String = args(0)
+    val model: String = args(1)
+    val results: String = args(2)
+    val iteration: Int = args(3).toInt
+
+    val evaluator: Evaluator = Evaluator(arff_file)
+
+    Console.err.println("Saving model")
+    evaluator.trainAndSaveModel(model)
+
+    Console.err.println("Evaluation results")
+    evaluator.evaluate(results, iteration)
+  }
 }

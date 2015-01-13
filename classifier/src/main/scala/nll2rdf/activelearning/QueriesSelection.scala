@@ -18,14 +18,14 @@
 
 package nll2rdf.activelearning
 
-import java.io.{File, PrintWriter}
-
+import java.io.{PrintWriter, File}
 import nll2rdf.classifiers.NaiveBayesInfoGain
+import scala.io.Source
 import weka.core.{DenseInstance, Instances}
 import weka.core.converters.ConverterUtils.DataSource
-import scala.io.Source
 
-class QueriesSelection(val csv_file: File, arff: File, model: File, queries_size: Int = 5) {
+class QueriesSelection(val csv_file: File, arff: File, model: File,
+                       queries_size: Int = 5) {
   val dataset: Instances = DataSource.read(arff.getCanonicalPath)
   dataset.setClassIndex(dataset.numAttributes - 1)
 
@@ -37,7 +37,7 @@ class QueriesSelection(val csv_file: File, arff: File, model: File, queries_size
 
   val instances_count: Double = Source.fromFile(csv_file).getLines.size
 
-  private def print_progress(total: Double, current: Double): Unit = {
+  private def printProgress(total: Double, current: Double): Unit = {
     val percentage: Double = current * 100.0 / total
 
     val totalbars: String = "=" * percentage.toInt
@@ -49,7 +49,7 @@ class QueriesSelection(val csv_file: File, arff: File, model: File, queries_size
   def query(): Unit = {
     Console.err.println("Active learning querying on unlabeled corpus pool")
 
-    print_progress(instances_count, 0)
+    printProgress(instances_count, 0)
     var current: Double = 1
 
     for(line <- Source.fromFile(csv_file).getLines) {
@@ -63,10 +63,30 @@ class QueriesSelection(val csv_file: File, arff: File, model: File, queries_size
       }
 
       queries.addValue(instance_data(0).replaceAll("'", ""), learner.distributionForInstance(instance).max)
-      print_progress(instances_count, current)
+      printProgress(instances_count, current)
       current += 1
     }
 
     Console.err.println()
+  }
+}
+
+object QueriesSelection {
+  def main(args: Array[String]) {
+    val csv_file: File = new File(args(0))
+    val arff: File = new File(args(1))
+    val model: File = new File(args(2))
+    val queries: File = new File(args(3))
+    val queries_size: Int =
+      if (args.length > 4) args(4).toInt
+      else 5
+
+    val queriesSelection = new QueriesSelection(csv_file, arff, model, queries_size)
+
+    queriesSelection.query()
+
+    val queryFile: PrintWriter = new PrintWriter(queries)
+    queryFile.write(queriesSelection.queries.queries.keySet.mkString(","))
+    queryFile.close()
   }
 }
