@@ -1,7 +1,7 @@
 #!/usr/bin/env perl
 
 # NLL2RDF Active Learner
-# Copyright (C) 2014 Cristian A. Cardellino
+# Copyright (C) 2014 AUTHOR NAME
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -29,7 +29,7 @@ sub print_help {
   print STDERR sprintf("\t%-10s Evaluate a trained model\n\n", "test");
 }
 
-print STDERR "NLL2RDF Active Learner Copyright (C) 2014 Cristian A. Cardellino\n";
+print STDERR "NLL2RDF Active Learner Copyright (C) 2014 AUTHOR NAME\n";
 print STDERR "This program comes with ABSOLUTELY NO WARRANTY.\n";
 print STDERR "This is free software, and you are welcome to redistribute it under certain conditions.\n";
 print STDERR "See LICENSE for details, or visit <http://www.gnu.org/licenses/gpl.html>.\n\n";

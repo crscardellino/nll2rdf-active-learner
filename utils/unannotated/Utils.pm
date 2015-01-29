@@ -1,5 +1,5 @@
 # NLL2RDF Active Learner
-# Copyright (C) 2014 Cristian A. Cardellino
+# Copyright (C) 2014 AUTHOR NAME
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by

@@ -4,11 +4,10 @@ Natural Language Licenses to RDF
 Text clasification tool for transforming natural language licenses to ODRL RDF
 data.
 
-NLL2RDF Active Learner Copyright (C) 2014 Cristian A. Cardellino This program
-comes with ABSOLUTELY NO WARRANTY. 
-This is free software, and you are welcome to redistribute it under certain
-conditions. See LICENSE for details, or visit
-<http://www.gnu.org/licenses/gpl.html>.
+NLL2RDF Active Learner Copyright (C) 2014 AUTHOR NAME This program
+comes with ABSOLUTELY NO WARRANTY.  This is free software, and you are
+welcome to redistribute it under certain conditions. See LICENSE for
+details, or visit <http://www.gnu.org/licenses/gpl.html>.
 
 
 Requirements:
