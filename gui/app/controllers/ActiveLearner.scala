@@ -77,32 +77,36 @@ object ActiveLearner extends Controller {
       val settings: JsValue = Json.parse(Source.fromFile("/tmp/nll2rdf.tmp/settings.json").getLines().next)
       val queries: Array[String] = Source.fromFile("/tmp/nll2rdf.tmp/queries.txt").getLines().next.split(',')
 
-      Play.current.configuration.getString("learner.basedir") map { basedir =>
-        for (query <- queries) {
-          val file: File = new File(s"/tmp/nll2rdf.tmp/instances/$query.txt")
+      Play.current.configuration.getString("learner.basedir") map {
+        case "changeme" =>
+            InternalServerError("You have to setup the learner.basedir of the application in the " +
+                    "configuration file (gui/conf/application.conf).")
+        case basedir =>
+            for (query <- queries) {
+              val file: File = new File(s"/tmp/nll2rdf.tmp/instances/$query.txt")
 
-          for (classname <- (json \ query).as[List[String]]) {
-            val newfile: File = new File(s"/tmp/nll2rdf.tmp/instances/iteration$iteration/$query.$classname.txt")
-            val savefile: File = new File(s"$basedir/models/tagged/$query.$classname.txt")
-            FileUtils.copyFile(file, newfile)
-            FileUtils.copyFile(file, savefile)
-          }
-        }
+              for (classname <- (json \ query).as[List[String]]) {
+                val newfile: File = new File(s"/tmp/nll2rdf.tmp/instances/iteration$iteration/$query.$classname.txt")
+                val savefile: File = new File(s"$basedir/models/tagged/$query.$classname.txt")
+                FileUtils.copyFile(file, newfile)
+                FileUtils.copyFile(file, savefile)
+              }
+            }
 
-        val filter: Int = (settings \ "tagfilter").as[Int]
-        val filteringcmd: String = s"perl $basedir/utils/activelearning/filtering.pl $iteration"
-        val oraclecmd: String = s"perl $basedir/utils/activelearning/oracle.pl $iteration mixed $filter"
+            val filter: Int = (settings \ "tagfilter").as[Int]
+            val filteringcmd: String = s"perl $basedir/utils/activelearning/filtering.pl $iteration"
+            val oraclecmd: String = s"perl $basedir/utils/activelearning/oracle.pl $iteration mixed $filter"
 
-        runProcess(filteringcmd).flatMap(_ => runProcess(oraclecmd)) map { _ =>
-          Logger.debug("Feature selection for oracle feedback")
-          val featuresFeedback: FeaturesFeedback = new FeaturesFeedback(new File(s"/tmp/nll2rdf.tmp/mixed.arff"))
+            runProcess(filteringcmd).flatMap(_ => runProcess(oraclecmd)) map { _ =>
+              Logger.debug("Feature selection for oracle feedback")
+              val featuresFeedback: FeaturesFeedback = new FeaturesFeedback(new File(s"/tmp/nll2rdf.tmp/mixed.arff"))
 
-          featuresFeedback.feedback("/tmp/nll2rdf.tmp/features", iteration)
+              featuresFeedback.feedback("/tmp/nll2rdf.tmp/features", iteration)
 
-          Ok(Json.obj("message" -> "OK"))
-        } getOrElse {
-          InternalServerError("Error processing the annotated examples")
-        }
+              Ok(Json.obj("message" -> "OK"))
+            } getOrElse {
+              InternalServerError("Error processing the annotated examples")
+            }
       } getOrElse {
         InternalServerError("The base directory of the learner couldn't be established")
       }
